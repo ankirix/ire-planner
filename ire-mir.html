@@ -1,0 +1,1096 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Ire">
+<meta name="theme-color" content="#080810">
+<!-- Seguridad: sin referrer externo, sin iframes, solo recursos propios + Google Fonts -->
+<meta name="referrer" content="no-referrer">
+<meta http-equiv="Content-Security-Policy" content="
+  default-src 'self';
+  style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+  font-src https://fonts.gstatic.com;
+  script-src 'self' 'unsafe-inline';
+  img-src 'none';
+  frame-src 'none';
+  object-src 'none';
+  base-uri 'self';
+">
+<title>Ire</title>
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;1,400;1,500&family=Mulish:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+/* ─────────────────────────────────────
+   TOKENS
+───────────────────────────────────── */
+:root {
+  --bg:    #080810;
+  --rose:  #e8a0bc;
+  --lav:   #b0a0e0;
+  --sage:  #8ec8b0;
+  --gold:  #e8c070;
+  --text:  #ede8f2;
+  --sub:   rgba(237,232,242,.38);
+  --line:  rgba(237,232,242,.07);
+  --r:     14px;
+  --st:    env(safe-area-inset-top,  0px);
+  --sb:    env(safe-area-inset-bottom, 0px);
+}
+
+/* ─────────────────────────────────────
+   RESET & BASE
+───────────────────────────────────── */
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{
+  font-family:'Mulish',sans-serif;
+  background:var(--bg);
+  color:var(--text);
+  overflow-x:hidden;
+  /* fondo estático — todo scrollea junto */
+  background-image:
+    radial-gradient(ellipse 60% 50% at 10% 0%,  rgba(176,160,224,.12) 0%,transparent 60%),
+    radial-gradient(ellipse 50% 40% at 90% 100%, rgba(232,160,188,.10) 0%,transparent 60%);
+  background-attachment:fixed;
+}
+
+/* ─────────────────────────────────────
+   PANTALLAS — scroll nativo completo
+   SIN position:fixed en el contenido,
+   solo la nav inferior va fija
+───────────────────────────────────── */
+.screen{display:none;min-height:100dvh;padding-bottom:calc(68px + var(--sb))}
+.screen.active{display:block}
+
+/* wrapper centrado */
+.w{max-width:390px;margin:0 auto;padding:0 20px}
+
+/* ─────────────────────────────────────
+   PANTALLA PRINCIPAL
+───────────────────────────────────── */
+
+/* ── Cabecera — sin fondo, parte del scroll ── */
+.hdr{padding:calc(22px + var(--st)) 20px 0;max-width:390px;margin:0 auto}
+.hdr-row{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:28px}
+
+.brand-name{
+  font-family:'Lora',serif;font-size:24px;font-style:italic;font-weight:400;
+  color:var(--text);line-height:1;
+}
+.brand-name em{
+  background:linear-gradient(120deg,var(--rose),var(--lav));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  font-style:normal;
+}
+.brand-sub{font-size:10px;color:var(--sub);letter-spacing:1.5px;text-transform:uppercase;margin-top:5px}
+
+.hdr-btns{display:flex;gap:8px;padding-top:4px}
+.hbtn{
+  width:34px;height:34px;border-radius:50%;
+  border:1px solid var(--line);background:transparent;
+  color:var(--sub);font-size:16px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;transition:all .18s
+}
+.hbtn:active{color:var(--rose);border-color:rgba(232,160,188,.3)}
+
+/* ── Frase del día ── */
+.quote{
+  margin:0 20px 28px;max-width:350px;
+  padding-left:14px;
+  border-left:1px solid rgba(232,160,188,.25);
+}
+.quote-lbl{font-size:9px;text-transform:uppercase;letter-spacing:2px;color:var(--sub);margin-bottom:7px}
+.quote-txt{
+  font-family:'Lora',serif;font-size:14px;font-style:italic;
+  line-height:1.7;color:rgba(237,232,242,.75);
+}
+
+/* ─────────────────────────────────────
+   CALENDARIO UNIFICADO
+   Una sola fila. Cada día muestra:
+   · nombre abreviado
+   · número
+   · estado: vacío / con puntos / completado (verde) / hoy (anillo)
+   · si es el seleccionado: fondo suave
+   No hay segunda fila de círculos.
+───────────────────────────────────── */
+.cal{
+  display:flex;gap:5px;
+  padding:0 20px 6px;
+  overflow-x:auto;scrollbar-width:none;
+  max-width:390px;margin:0 auto;
+}
+.cal::-webkit-scrollbar{display:none}
+
+.day{
+  flex-shrink:0;width:46px;
+  border-radius:12px;
+  padding:9px 0 7px;
+  text-align:center;cursor:pointer;
+  border:1px solid transparent;
+  transition:all .22s ease;
+  position:relative;
+}
+/* hoy — anillo sutil */
+.day.today{border-color:rgba(176,160,224,.35)}
+/* seleccionado */
+.day.sel{
+  background:rgba(237,232,242,.06);
+  border-color:rgba(237,232,242,.14);
+}
+/* día completado — punto verde abajo */
+.day.complete .day-dot{background:var(--sage)}
+/* hoy + seleccionado */
+.day.today.sel{border-color:rgba(176,160,224,.5)}
+
+.day-name{font-size:9px;text-transform:uppercase;letter-spacing:.4px;color:var(--sub);margin-bottom:4px}
+.day.today .day-name{color:var(--lav)}
+.day.sel   .day-name{color:rgba(237,232,242,.7)}
+
+.day-num{font-size:17px;font-weight:400;line-height:1}
+.day.today .day-num{color:var(--lav);font-weight:500}
+
+/* indicador inferior: tareas o completado */
+.day-dot{
+  width:4px;height:4px;border-radius:50%;
+  background:rgba(232,160,188,.4);
+  margin:6px auto 0;
+  transition:background .3s;
+}
+.day-dot.hidden{opacity:0}
+
+/* ── Pista de progreso semanal ── */
+.week-hint{
+  max-width:390px;margin:0 auto;
+  padding:8px 20px 20px;
+  display:flex;align-items:center;gap:12px;
+}
+.week-track{flex:1;height:2px;background:var(--line);border-radius:2px;overflow:hidden}
+.week-fill{
+  height:100%;border-radius:2px;
+  background:linear-gradient(90deg,var(--lav),var(--rose));
+  transition:width .5s ease;
+}
+/* puntitos de días debajo de la barra */
+.week-dots{
+  max-width:390px;margin:-10px auto 18px;
+  padding:0 20px;
+  display:flex;gap:6px;align-items:center;
+}
+.wd{
+  width:6px;height:6px;border-radius:50%;
+  background:var(--line);
+  transition:background .3s ease, transform .3s ease;
+}
+.wd.filled{
+  background:var(--rose);
+  transform:scale(1.2);
+}
+.wd.gold{background:var(--gold);transform:scale(1.3)}
+.week-label{font-size:11px;color:var(--sub);white-space:nowrap;flex-shrink:0}
+.week-label .hl{color:var(--gold)}
+
+/* ── Divisor ── */
+.divider{height:1px;background:var(--line);margin:0 20px 20px;max-width:350px}
+
+/* ─────────────────────────────────────
+   TABS
+───────────────────────────────────── */
+.tabs{display:flex;gap:0;margin:0 20px 20px;border-bottom:1px solid var(--line);max-width:350px}
+.tab{
+  padding:8px 16px 10px;font-size:12px;font-weight:500;
+  color:var(--sub);cursor:pointer;border:none;background:transparent;
+  font-family:'Mulish',sans-serif;
+  border-bottom:2px solid transparent;margin-bottom:-1px;
+  transition:all .18s;
+}
+.tab.active{color:var(--text);border-bottom-color:var(--rose)}
+
+/* ─────────────────────────────────────
+   CONTENIDO DIARIO
+───────────────────────────────────── */
+.day-hdr{
+  display:flex;align-items:baseline;justify-content:space-between;
+  margin-bottom:16px;
+}
+.day-hdr-title{font-family:'Lora',serif;font-size:20px;font-style:italic;color:var(--text)}
+.day-hdr-badge{font-size:11px;color:var(--sub)}
+
+/* hint mínimo de tareas */
+.min-hint{font-size:11px;color:var(--sub);margin-bottom:14px;line-height:1.6}
+.min-hint .hl{color:var(--lav)}
+.min-hint.done .hl{color:var(--sage)}
+
+/* banner regalo */
+.reward-banner{
+  display:flex;align-items:center;gap:12px;
+  padding:13px 14px;border-radius:var(--r);
+  border:1px solid rgba(232,192,112,.2);
+  background:rgba(232,192,112,.04);
+  margin-bottom:16px;cursor:pointer;
+  animation:pulse 3s ease infinite;
+}
+@keyframes pulse{0%,100%{border-color:rgba(232,192,112,.2)}50%{border-color:rgba(232,192,112,.38)}}
+.reward-banner:active{opacity:.7}
+.rb-ico{font-size:22px;flex-shrink:0}
+.rb-txt strong{font-size:12px;font-weight:500;color:var(--gold);display:block}
+.rb-txt span{font-size:11px;color:var(--sub)}
+
+/* ── Form añadir ── */
+.add-form{margin-bottom:16px}
+.add-r1{display:flex;gap:8px;margin-bottom:8px}
+.add-r2{display:flex;gap:8px}
+.inp{
+  flex:1;min-width:0;
+  background:transparent;
+  border:1px solid var(--line);border-radius:10px;
+  padding:10px 12px;color:var(--text);
+  font-family:'Mulish',sans-serif;font-size:14px;
+  outline:none;transition:border .18s;
+}
+.inp:focus{border-color:rgba(232,160,188,.3)}
+.inp::placeholder{color:var(--sub)}
+.sel-inp{
+  flex:1;min-width:0;background:transparent;
+  border:1px solid var(--line);border-radius:10px;
+  padding:9px 10px;color:var(--text);
+  font-family:'Mulish',sans-serif;font-size:12px;
+  outline:none;-webkit-appearance:none;
+}
+.time-inp{
+  width:88px;flex-shrink:0;background:transparent;
+  border:1px solid var(--line);border-radius:10px;
+  padding:9px 8px;color:var(--text);
+  font-family:'Mulish',sans-serif;font-size:12px;outline:none;
+}
+.add-btn{
+  flex-shrink:0;
+  background:linear-gradient(135deg,var(--rose),var(--lav));
+  border:none;border-radius:10px;
+  padding:10px 15px;color:#fff;
+  font-family:'Mulish',sans-serif;font-size:13px;font-weight:500;
+  cursor:pointer;white-space:nowrap;
+  box-shadow:0 0 16px rgba(232,160,188,.22),0 4px 10px rgba(176,160,224,.18);
+  transition:opacity .18s,transform .12s;
+}
+.add-btn:active{opacity:.8;transform:scale(.95)}
+
+/* ── Selector duración pomodoro ── */
+.pomo-dur{
+  display:flex;gap:0;justify-content:center;margin-bottom:28px;
+  border:1px solid var(--line);border-radius:10px;overflow:hidden;
+  max-width:240px;margin-left:auto;margin-right:auto;
+}
+.pdur{
+  flex:1;padding:8px 0;text-align:center;
+  font-family:'Mulish',sans-serif;font-size:12px;color:var(--sub);
+  background:transparent;border:none;cursor:pointer;
+  transition:all .18s;letter-spacing:.3px;
+}
+.pdur.active{background:rgba(232,160,188,.12);color:var(--rose)}
+.pdur+.pdur{border-left:1px solid var(--line)}
+
+/* ── Tareas mejoradas ── */
+.task{
+  display:flex;align-items:center;gap:12px;
+  padding:11px 12px;
+  border-radius:10px;
+  margin-bottom:4px;
+  transition:background .15s;
+  animation:si .18s ease;
+}
+.task:hover{background:rgba(237,232,242,.03)}
+.task.done{opacity:.45}
+.task.done .task-txt{text-decoration:line-through}
+
+/* checkbox más elegante — cuadrado redondeado */
+.chk{
+  width:17px;height:17px;
+  border-radius:5px;
+  border:1px solid rgba(237,232,242,.18);
+  flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  font-size:9px;cursor:pointer;transition:all .18s;
+}
+.task.done .chk{
+  background:var(--rose);border-color:transparent;
+  box-shadow:0 0 6px rgba(232,160,188,.3);
+}
+.task-body{flex:1;min-width:0}
+.task-txt{font-size:13px;line-height:1.4;word-break:break-word;color:var(--text)}
+
+/* badges de meta e hora */
+.task-meta{display:flex;gap:5px;margin-top:3px;flex-wrap:wrap;align-items:center}
+.task-time{
+  font-size:10px;color:var(--sub);
+  display:flex;align-items:center;gap:2px;
+}
+.task-time::before{content:'·';margin-right:1px}
+.task-tag{
+  font-size:9px;
+  padding:1px 7px;border-radius:20px;
+  border:1px solid var(--line);
+  color:var(--sub);letter-spacing:.3px;
+}
+/* color por categoría */
+.task-tag[data-cat="teoría"]  {border-color:rgba(176,160,224,.3);color:var(--lav)}
+.task-tag[data-cat="test"]    {border-color:rgba(232,160,188,.3);color:var(--rose)}
+.task-tag[data-cat="repaso"]  {border-color:rgba(232,192,112,.3);color:var(--gold)}
+.task-tag[data-cat="salud"]   {border-color:rgba(142,200,176,.3);color:var(--sage)}
+.task-tag[data-cat="personal"]{border-color:rgba(237,232,242,.15);color:var(--sub)}
+
+.del{
+  width:18px;height:18px;border:none;background:transparent;
+  color:rgba(237,232,242,.12);font-size:15px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  transition:color .18s;line-height:1;padding:0;
+}
+.del:active{color:rgba(248,113,113,.6)}
+
+.empty{padding:28px 0;color:var(--sub);font-size:12px;text-align:center;letter-spacing:.3px}
+
+/* separador entre pendientes y completadas */
+.tasks-divider{height:1px;background:var(--line);margin:12px 0}
+
+/* notas */
+.note-area{
+  width:100%;min-height:120px;background:transparent;
+  border:1px solid var(--line);border-radius:var(--r);
+  padding:13px;color:var(--text);font-family:'Mulish',sans-serif;
+  font-size:14px;line-height:1.7;resize:none;outline:none;transition:border .18s;
+}
+.note-area:focus{border-color:rgba(232,160,188,.25)}
+.note-area::placeholder{color:var(--sub)}
+
+/* ─────────────────────────────────────
+   NAV INFERIOR (único elemento fijo)
+───────────────────────────────────── */
+.bnav{
+  position:fixed;bottom:0;left:0;right:0;
+  background:rgba(8,8,16,.92);
+  border-top:1px solid var(--line);
+  display:flex;justify-content:space-around;
+  padding:8px 0 calc(8px + var(--sb));z-index:50;
+  /* sin backdrop-filter para evitar glitches iOS */
+}
+.ni{
+  display:flex;flex-direction:column;align-items:center;gap:2px;
+  padding:4px 20px;border:none;background:transparent;
+  color:var(--sub);font-family:'Mulish',sans-serif;cursor:pointer;transition:color .18s;
+}
+.ni.active{color:var(--rose)}
+.ni span:first-child{font-size:19px}
+.ni span:last-child{font-size:9px;letter-spacing:.3px}
+
+/* ─────────────────────────────────────
+   PANTALLA POMODORO
+───────────────────────────────────── */
+.back-btn{
+  display:flex;align-items:center;gap:5px;
+  border:none;background:transparent;color:var(--sub);
+  font-family:'Mulish',sans-serif;font-size:13px;cursor:pointer;
+  padding:0;margin-bottom:32px;transition:color .18s;
+}
+.back-btn:active{color:var(--text)}
+
+.pomo-hdr{
+  font-family:'Lora',serif;font-size:22px;font-style:italic;
+  color:var(--text);text-align:center;margin-bottom:4px;
+}
+.pomo-sub{font-size:10px;color:var(--sub);text-align:center;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:36px}
+
+.ring-wrap{
+  width:180px;height:180px;   /* tamaño igual al SVG, sin ambigüedad */
+  position:relative;
+  margin:0 auto 32px;
+}
+.psvg{
+  position:absolute;inset:0;
+  transform:rotate(-90deg);
+}
+.p-track{fill:none;stroke:rgba(237,232,242,.05);stroke-width:5}
+.p-arc{fill:none;stroke-width:5;stroke-linecap:round;stroke:url(#pg);transition:stroke-dashoffset .7s ease}
+.ring-center{
+  position:absolute;inset:0;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  pointer-events:none;
+}
+.ptime{font-family:'Lora',serif;font-size:40px;font-weight:400;letter-spacing:-1px;line-height:1}
+.pmode{font-size:9px;text-transform:uppercase;letter-spacing:2px;color:var(--sub);margin-top:6px}
+
+.pomo-btns{
+  display:flex;gap:14px;align-items:center;justify-content:center;margin-bottom:22px;
+}
+.pbtn{
+  border:none;border-radius:50%;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  transition:all .18s;flex-shrink:0;
+  padding:0;line-height:1;
+  -webkit-appearance:none;
+}
+.pbtn:active{transform:scale(.9)}
+.pbtn.main{
+  width:58px;height:58px;
+  background:linear-gradient(135deg,var(--rose),var(--lav));
+  box-shadow:0 0 18px rgba(232,160,188,.28),0 4px 10px rgba(176,160,224,.2);
+}
+.pbtn.main .pbtn-ico{font-size:18px;line-height:1;display:block}
+.pbtn.sec{
+  width:42px;height:42px;
+  background:transparent;border:1px solid var(--line);color:var(--sub);
+}
+.pbtn.sec .pbtn-ico{font-size:14px;line-height:1;display:block;font-style:normal}
+
+.pomo-count{text-align:center;font-size:12px;color:var(--sub);margin-bottom:24px}
+.pomo-count span{color:var(--rose)}
+
+.pomo-msg{
+  padding:18px 16px;border-left:2px solid rgba(232,160,188,.3);
+  animation:si .35s ease;
+}
+.pomo-msg-ico{font-size:22px;margin-bottom:8px}
+.pomo-msg-txt{
+  font-family:'Lora',serif;font-size:14px;font-style:italic;
+  line-height:1.75;color:rgba(237,232,242,.7);
+}
+
+/* ─────────────────────────────────────
+   PANTALLA AGOBIADA
+───────────────────────────────────── */
+.stress-title{font-family:'Lora',serif;font-size:22px;font-style:italic;color:var(--text);margin-bottom:4px}
+.stress-intro{font-size:12px;color:var(--sub);line-height:1.6;margin-bottom:18px}
+
+.breath-wrap{
+  display:flex;flex-direction:column;align-items:center;
+  margin-bottom:18px;
+}
+.breath-lbl{font-size:9px;text-transform:uppercase;letter-spacing:2px;color:var(--sub);margin-bottom:12px}
+.breath-circle{
+  width:70px;height:70px;border-radius:50%;
+  border:1px solid rgba(142,200,176,.25);
+  display:flex;align-items:center;justify-content:center;
+  font-size:10px;color:var(--sage);
+  transition:transform 4s ease;margin-bottom:10px;
+}
+.breath-circle.expand{transform:scale(1.28)}
+.breath-circle.contract{transform:scale(1)}
+.breath-instruct{font-size:12px;color:var(--sub);min-height:16px;margin-bottom:10px}
+.breath-btn{
+  background:transparent;border:1px solid var(--line);border-radius:10px;
+  padding:7px 20px;color:var(--text);font-family:'Mulish',sans-serif;font-size:12px;
+  cursor:pointer;transition:border .18s;
+}
+.breath-btn:active{border-color:var(--sage)}
+
+.stress-quote{
+  margin-bottom:16px;padding-left:12px;
+  border-left:1px solid rgba(232,160,188,.2);
+}
+.sq-lbl{font-size:9px;text-transform:uppercase;letter-spacing:2px;color:var(--sub);margin-bottom:5px}
+.sq-txt{font-family:'Lora',serif;font-size:13px;font-style:italic;line-height:1.6;color:rgba(237,232,242,.72)}
+
+.riddle-wrap{border-top:1px solid var(--line);padding-top:16px}
+.riddle-lbl{font-size:9px;text-transform:uppercase;letter-spacing:2px;color:var(--sub);margin-bottom:8px}
+.riddle-q{font-size:13px;line-height:1.55;color:var(--text);margin-bottom:12px}
+.riddle-btns{display:flex;gap:8px;flex-wrap:wrap}
+.rbtn{
+  background:transparent;border:1px solid var(--line);border-radius:9px;
+  padding:6px 12px;color:var(--sub);font-family:'Mulish',sans-serif;font-size:11px;
+  cursor:pointer;transition:all .18s;
+}
+.rbtn:active{color:var(--lav);border-color:rgba(176,160,224,.3)}
+/* respuesta inline — no añade altura nueva, aparece debajo de los botones */
+.riddle-ans{
+  font-size:13px;color:var(--sage);margin-top:10px;
+  line-height:1.5;display:none;
+}
+.riddle-ans.show{display:block;animation:si .25s ease}
+
+/* ─────────────────────────────────────
+   MODAL REGALO
+───────────────────────────────────── */
+.modal-ov{
+  position:fixed;inset:0;z-index:200;
+  background:rgba(8,8,16,.88);
+  display:flex;align-items:center;justify-content:center;
+  padding:24px;animation:fi .25s ease;
+}
+.modal-ov.hidden{display:none}
+@keyframes fi{from{opacity:0}to{opacity:1}}
+.modal-box{
+  max-width:310px;width:100%;
+  padding:32px 24px;
+  border:1px solid rgba(237,232,242,.08);
+  border-radius:20px;
+  text-align:center;
+  animation:pi .38s cubic-bezier(.34,1.56,.64,1);
+}
+@keyframes pi{from{opacity:0;transform:scale(.78)}to{opacity:1;transform:scale(1)}}
+.m-ico{font-size:46px;margin-bottom:10px;display:block;animation:bob .9s ease infinite alternate}
+@keyframes bob{from{transform:translateY(0)}to{transform:translateY(-5px)}}
+.m-title{
+  font-family:'Lora',serif;font-size:22px;font-style:italic;
+  color:var(--text);margin-bottom:6px;
+}
+.m-sub{font-size:12px;color:var(--sub);margin-bottom:20px;line-height:1.6}
+.m-gift{
+  border-top:1px solid var(--line);border-bottom:1px solid var(--line);
+  padding:16px 0;margin-bottom:20px;
+}
+.m-gift-lbl{font-size:9px;text-transform:uppercase;letter-spacing:1.8px;color:var(--sub);margin-bottom:8px}
+.m-gift-txt{font-family:'Lora',serif;font-size:16px;font-style:italic;color:rgba(237,232,242,.85);line-height:1.6}
+.m-close{
+  background:linear-gradient(135deg,var(--rose),var(--lav));
+  border:none;border-radius:11px;padding:11px 32px;
+  color:#fff;font-family:'Mulish',sans-serif;font-size:13px;font-weight:500;
+  cursor:pointer;
+  box-shadow:0 0 16px rgba(232,160,188,.22);
+  transition:opacity .18s;
+}
+.m-close:active{opacity:.8}
+</style>
+</head>
+<body>
+
+<!-- Modal regalo -->
+<div class="modal-ov hidden" id="giftModal">
+  <div class="modal-box">
+    <span class="m-ico">🎁</span>
+    <div class="m-title">Lo has conseguido, Ire.</div>
+    <div class="m-sub">5 días de constancia real.<br>Tienes una sorpresa esta semana 💕</div>
+    <div class="m-gift">
+      <div class="m-gift-lbl">Tu plan juntos</div>
+      <div class="m-gift-txt" id="giftTxt"></div>
+    </div>
+    <button class="m-close" onclick="closeGift()">¡Genial! 🌸</button>
+  </div>
+</div>
+
+<!-- ═══════════════════ PRINCIPAL ═══════════════════ -->
+<div id="sMain" class="screen active">
+
+  <!-- cabecera — scrollea con todo -->
+  <div class="hdr">
+    <div class="hdr-row">
+      <div>
+        <div class="brand-name"><em>Ire</em></div>
+        <div class="brand-sub">tu compañera del MIR</div>
+      </div>
+      <div class="hdr-btns">
+        <button class="hbtn" onclick="go('sPomo')" title="Pomodoro">⏱</button>
+        <button class="hbtn" onclick="goStress()" title="Respira">🫂</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- frase del día -->
+  <div class="quote">
+    <div class="quote-lbl">Frase del día</div>
+    <div class="quote-txt" id="quoteEl"></div>
+  </div>
+
+  <!-- ── CALENDARIO UNIFICADO ──
+       Una sola fila. Cada chip muestra:
+       · nombre día · número
+       · punto: rosa = tiene tareas, verde = día completado
+       · borde: lav = hoy, blanco suave = seleccionado
+       · progreso semanal debajo como línea fina -->
+  <div class="cal" id="cal"></div>
+
+  <!-- barra progreso semanal -->
+  <div class="week-hint">
+    <div class="week-track"><div class="week-fill" id="wFill" style="width:0%"></div></div>
+    <div class="week-label" id="wLabel"></div>
+  </div>
+  <!-- puntitos decorativos de días -->
+  <div class="week-dots" id="wDots"></div>
+
+  <div class="divider"></div>
+
+  <!-- tabs -->
+  <div class="tabs" style="margin:0 20px 18px">
+    <button class="tab active" onclick="setTab('tasks',this)">Tareas</button>
+    <button class="tab" onclick="setTab('notes',this)">Notas</button>
+  </div>
+
+  <div class="w">
+    <!-- tab tareas -->
+    <div id="tabTasks">
+      <div class="day-hdr" id="dayHdr"></div>
+      <div class="min-hint" id="minHint"></div>
+      <div id="rewardArea"></div>
+
+      <div class="add-form">
+        <div class="add-r1">
+          <input class="inp" id="tInp" placeholder="Nueva tarea..." onkeydown="if(event.key==='Enter')addTask()">
+          <button class="add-btn" onclick="addTask()">+ Añadir</button>
+        </div>
+        <div class="add-r2">
+          <input class="time-inp" id="tTime" type="time">
+          <select class="sel-inp" id="tTag">
+            <option value="">Sin categoría</option>
+            <option value="teoría">Teoría</option>
+            <option value="test">Test</option>
+            <option value="repaso">Repaso</option>
+            <option value="salud">Salud</option>
+            <option value="personal">Personal</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="sec">Pendientes</div>
+      <div id="pendingList"></div>
+      <div id="doneSec" style="display:none">
+        <div class="sec" style="margin-top:16px">Completadas</div>
+        <div id="doneList"></div>
+      </div>
+    </div>
+
+    <!-- tab notas -->
+    <div id="tabNotes" style="display:none">
+      <textarea class="note-area" id="noteArea"
+        placeholder="Ideas, dudas, cómo te sientes hoy..."
+        oninput="saveNote()"></textarea>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════ POMODORO ═══════════════════ -->
+<div id="sPomo" class="screen">
+  <div class="w" style="padding-top:calc(24px + var(--st))">
+    <button class="back-btn" onclick="go('sMain')">← Volver</button>
+    <div class="pomo-hdr">Modo estudio</div>
+    <div class="pomo-sub">concentración · sin distracciones</div>
+
+    <!-- selector de duración minimalista -->
+    <div class="pomo-dur" id="pomoDur">
+      <button class="pdur active" onclick="setDur(25,this)">25 min</button>
+      <button class="pdur" onclick="setDur(45,this)">45 min</button>
+      <button class="pdur" onclick="setDur(60,this)">60 min</button>
+    </div>
+
+    <div class="ring-wrap">
+      <svg class="psvg" width="180" height="180" viewBox="0 0 180 180">
+        <defs>
+          <linearGradient id="pg" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stop-color="#b0a0e0"/>
+            <stop offset="100%" stop-color="#e8a0bc"/>
+          </linearGradient>
+        </defs>
+        <circle class="p-track" cx="90" cy="90" r="80"/>
+        <circle class="p-arc" id="pArc" cx="90" cy="90" r="80"
+          stroke-dasharray="502.7" stroke-dashoffset="0"/>
+      </svg>
+      <div class="ring-center">
+        <div class="ptime" id="pTime">25:00</div>
+        <div class="pmode" id="pMode">listo</div>
+      </div>
+    </div>
+
+    <div class="pomo-btns">
+      <button class="pbtn sec" onclick="resetPomo()"><span class="pbtn-ico">↺</span></button>
+      <button class="pbtn main" id="pPlay" onclick="togglePomo()"><span class="pbtn-ico" id="pPlayIco">▶</span></button>
+      <button class="pbtn sec" onclick="skipPomo()"><span class="pbtn-ico">⏭</span></button>
+    </div>
+
+    <div class="pomo-count">Pomodoros hoy: <span id="pCount">0</span></div>
+    <div id="pMsg"></div>
+  </div>
+</div>
+
+<!-- ═══════════════════ AGOBIADA ═══════════════════ -->
+<div id="sStress" class="screen">
+  <div class="w" style="padding-top:calc(24px + var(--st))">
+    <button class="back-btn" onclick="go('sMain')">← Volver</button>
+    <div class="stress-title">Respira, Ire.</div>
+    <div class="stress-intro">Para un momento.<br>No tienes que saberlo todo a la vez.</div>
+
+    <div class="breath-wrap">
+      <div class="breath-lbl">Respiración 4 · 4 · 4</div>
+      <div class="breath-circle" id="bCircle">Empezar</div>
+      <div class="breath-instruct" id="bInst"></div>
+      <button class="breath-btn" id="bBtn" onclick="toggleBreath()">Empezar</button>
+    </div>
+
+    <div class="stress-quote">
+      <div class="sq-lbl">Para este momento</div>
+      <div class="sq-txt" id="sQuote"></div>
+    </div>
+
+    <div class="riddle-wrap">
+      <div class="riddle-lbl">Desconecta un momento</div>
+      <div class="riddle-q" id="rQ"></div>
+      <div class="riddle-btns">
+        <button class="rbtn" onclick="showAns()">Ver respuesta</button>
+        <button class="rbtn" onclick="nextRiddle()">Otro acertijo</button>
+      </div>
+      <div class="riddle-ans" id="rAns"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Nav inferior -->
+<div class="bnav">
+  <button class="ni active" id="nMain"   onclick="go('sMain')"><span>🌸</span><span>Hoy</span></button>
+  <button class="ni"        id="nPomo"   onclick="go('sPomo')"><span>⏱</span><span>Pomodoro</span></button>
+  <button class="ni"        id="nStress" onclick="goStress()"><span>🫂</span><span>Respira</span></button>
+</div>
+
+<script>
+/* ══════════════════════════════════════
+   CONTENIDO
+══════════════════════════════════════ */
+const QUOTES=[
+  "Cada página que estudias hoy es una vida que en el futuro podrás cuidar. No hay nada pequeño en lo que estás haciendo.",
+  "Llevas años demostrándote que puedes. Esto no es diferente. Es solo el siguiente paso de alguien que siempre llega.",
+  "No estás memorizando datos. Estás convirtiéndote en la persona que un día alguien necesitará urgentemente.",
+  "El esfuerzo de hoy no se ve, pero se acumula. Lo que construyes en silencio es lo más sólido que existe.",
+  "Eres de las personas que cuando dicen que van a hacer algo, lo hacen. El MIR no va a ser la excepción.",
+  "Estudiar medicina hasta el final no lo hace cualquiera. Tú llevas años haciéndolo. Hoy es un día más de esa historia.",
+  "Detrás de cada pregunta de test hay un paciente imaginario. Y tú ya estás aprendiendo a cuidarlo.",
+  "No tienes que ser perfecta hoy. Solo tienes que aparecer. Y eso ya lo estás haciendo.",
+  "La constancia silenciosa es la forma más honesta de valentía. Y tú la tienes de sobra.",
+  "Cada hora que dedicas al MIR es una promesa que te haces a ti misma. Y siempre cumples las tuyas.",
+  "Lo que estudias hoy cabe en las manos con las que algún día ayudarás a alguien.",
+  "Hay días que no apetece. Y aun así apareces. Eso dice más de ti que cualquier nota.",
+  "No te compares con el ritmo de nadie más. Tu camino es tuyo, y lo estás recorriendo bien.",
+  "Dentro de unos años, alguien te llamará doctora. Hoy estás construyendo eso, página a página.",
+];
+const PMSGS=[
+  {i:"🌟",t:"Acabas de completar otro bloque de algo que muy poca gente es capaz de hacer. No estudias para un examen, estudias para ser la persona que alguien necesitará en el peor día de su vida."},
+  {i:"💫",t:"Un pomodoro más. Una pieza más del puzzle. No siempre lo verás, pero se está armando. Lo que estás construyendo es mucho más grande que cualquier pregunta de test."},
+  {i:"🌸",t:"Llevas haciéndolo bien mucho tiempo. Este pomodoro es una prueba más de que no abandonas cuando es difícil. Eso es exactamente lo que hace a una buena médica."},
+  {i:"✨",t:"Descansa de verdad estos minutos. Te los has ganado. Y cuando vuelvas, lo harás igual de bien que siempre."},
+  {i:"🌿",t:"Hay personas que estudian medicina. Y hay personas que se entregan a ella. Tú eres de las segundas."},
+  {i:"💛",t:"Detrás de cada tema hay una especialidad, y detrás de esa especialidad hay una versión tuya que ya sabe lo que quiere. Sigue."},
+];
+const SQUOTES=[
+  "No tienes que poder con todo hoy. Solo con este momento. Y en este momento, estás bien.",
+  "El agobio no significa que vayas mal. Significa que te importa. Y que te importe es lo que te llevará lejos.",
+  "Para. Respira. Recuerda por qué empezaste. Eso sigue siendo verdad aunque hoy sea difícil.",
+  "El MIR no mide lo mucho que sufres estudiando. Mide lo que sabes. Y tú sabes más de lo que crees.",
+  "Un mal momento no es un mal camino. Solo es un momento.",
+  "Date el mismo trato que le darías a una amiga en tu lugar. Con cariño, sin juicio.",
+];
+const RIDDLES=[
+  {q:"Tengo ciudades pero no casas, montañas pero no árboles, agua pero no peces. ¿Qué soy?",a:"Un mapa."},
+  {q:"Cuanto más me secas, más me mojo. ¿Qué soy?",a:"Una toalla."},
+  {q:"Siempre delante de ti pero nunca la puedes ver. ¿Qué es?",a:"Tu propio futuro."},
+  {q:"¿Qué cosa tiene dientes pero no puede morder?",a:"Un peine."},
+  {q:"Soy ligero como una pluma, pero ni el hombre más fuerte puede aguantarme más de unos minutos.",a:"El aliento."},
+  {q:"Tengo una cabeza y una cola, pero no tengo cuerpo. ¿Qué soy?",a:"Una moneda."},
+  {q:"¿Cuántos meses del año tienen 28 días?",a:"Los doce. Todos tienen al menos 28."},
+  {q:"Un médico tiene un hermano, pero ese hermano no tiene médico como hermano. ¿Cómo?",a:"El médico es una mujer."},
+  {q:"¿Qué es lo que cuanto más grande es, menos pesa?",a:"Un agujero."},
+  {q:"¿Qué se puede romper sin tocarlo?",a:"El silencio."},
+];
+const GIFTS=[
+  {i:'🍝',t:'Una cena en casa, con velas, tu comida favorita y yo de cocinero.'},
+  {i:'🎬',t:'Noche de peli: tú eliges, yo preparo todo.'},
+  {i:'🌅',t:'Salida a ver el amanecer juntos. Solo tú, yo y el cielo.'},
+  {i:'☕',t:'Mañana sin prisa: desayuno largo en algún sitio bonito.'},
+  {i:'🚶',t:'Un paseo sin destino. Solo caminar y hablar contigo.'},
+  {i:'🌳',t:'Picnic en el parque: manta, comida rica y tiempo de sobra.'},
+  {i:'🎵',t:'Tarde de música: ponemos lo que más nos gusta y cantamos fatal juntos.'},
+  {i:'🌃',t:'Cena fuera, paseo nocturno, y que la noche se alargue.'},
+  {i:'🍦',t:'Ruta de heladerías. Probamos todo lo que nos apetezca.'},
+];
+
+/* ── Constantes lógica ── */
+const MIN_T=3, GOAL_D=6, GOAL_P=90;
+
+/* ── Estado ── */
+const DN=['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+const DNF=['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+const MN=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+let today=new Date(), sel=dk(today), giftShown={};
+
+/* ── Util ── */
+function dk(d){return `${d.getFullYear()}-${p2(d.getMonth()+1)}-${p2(d.getDate())}`}
+function p2(n){return String(n).padStart(2,'0')}
+function ls(k){try{return JSON.parse(localStorage.getItem(k)||'null')}catch{return null}}
+function ss(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch{}}
+function gt(k){return ls('t_'+k)||[]}
+function st(k,v){ss('t_'+k,v)}
+function gn(k){try{return localStorage.getItem('n_'+k)||''}catch{return''}}
+function sn(k,v){try{localStorage.setItem('n_'+k,v)}catch{}}
+function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+
+/* ── Semana ── */
+function monday(d){const day=d.getDay(),m=new Date(d);m.setDate(d.getDate()-(day===0?6:day-1));return m}
+function weekDays(){const m=monday(today);return Array.from({length:7},(_,i)=>{const d=new Date(m);d.setDate(m.getDate()+i);return d})}
+function wk(){return dk(monday(today))}
+
+function dayDone(key){
+  const t=gt(key); if(t.length<MIN_T)return false;
+  return Math.round(t.filter(x=>x.done).length/t.length*100)>=GOAL_P;
+}
+function doneDays(){return weekDays().filter(d=>dayDone(dk(d))).length}
+function weekGift(){
+  const w=wk();let i=ls('g_'+w);
+  if(i===null){i=Math.floor(Math.random()*GIFTS.length);ss('g_'+w,i)}
+  return GIFTS[i%GIFTS.length];
+}
+
+/* ── Render ── */
+function renderAll(){
+  renderQuote();renderCal();renderWeekBar();renderDayHdr();renderTasks();renderNote();
+}
+
+function renderQuote(){
+  document.getElementById('quoteEl').textContent=QUOTES[Math.floor(Date.now()/86400000)%QUOTES.length];
+}
+
+/* CALENDARIO UNIFICADO — una sola fila con toda la info */
+function renderCal(){
+  const days=weekDays(), cal=document.getElementById('cal');
+  cal.innerHTML='';
+  days.forEach(d=>{
+    const key=dk(d),isT=key===dk(today),isSel=key===sel;
+    const tasks=gt(key), hasTasks=tasks.length>0, done=dayDone(key);
+
+    const el=document.createElement('div');
+    el.className='day'+(isSel?' sel':'')+(isT?' today':'')+(done?' complete':'');
+
+    el.innerHTML=`
+      <div class="day-name">${DN[d.getDay()]}</div>
+      <div class="day-num">${d.getDate()}</div>
+      <div class="day-dot${hasTasks?'':' hidden'}"></div>`;
+
+    el.onclick=()=>{sel=key;renderAll();scrollSel()};
+    cal.appendChild(el);
+  });
+}
+
+function scrollSel(){
+  const chips=document.getElementById('cal').querySelectorAll('.day');
+  weekDays().forEach((d,i)=>{if(dk(d)===sel)chips[i]?.scrollIntoView({behavior:'smooth',block:'nearest',inline:'center'})});
+}
+
+function renderWeekBar(){
+  const done=doneDays(), pct=Math.min(Math.round(done/GOAL_D*100),100);
+  document.getElementById('wFill').style.width=pct+'%';
+
+  // label
+  const lbl=document.getElementById('wLabel');
+  if(done>=GOAL_D) lbl.innerHTML=`<span class="hl">🎁 desbloqueado</span>`;
+  else lbl.textContent=`${done} de ${GOAL_D}`;
+
+  // puntitos — uno por día objetivo (GOAL_D=6), los completados se iluminan
+  const dots=document.getElementById('wDots');
+  dots.innerHTML=Array.from({length:GOAL_D},(_,i)=>{
+    const cls = i<done ? (i===GOAL_D-1&&done===GOAL_D ? 'wd gold' : 'wd filled') : 'wd';
+    return `<div class="${cls}"></div>`;
+  }).join('');
+}
+
+function renderDayHdr(){
+  const [y,m,d]=sel.split('-').map(Number),date=new Date(y,m-1,d);
+  const isT=sel===dk(today);
+  document.getElementById('dayHdr').innerHTML=`
+    <div class="day-hdr-title">${DNF[date.getDay()]} ${date.getDate()}</div>
+    <div class="day-hdr-badge">${isT?'hoy':MN[date.getMonth()]}</div>`;
+}
+
+function renderTasks(){
+  const tasks=gt(sel),pending=tasks.filter(t=>!t.done),done=tasks.filter(t=>t.done);
+  const total=tasks.length, pctD=total>0?Math.round(done.length/total*100):0;
+  const isDone=dayDone(sel);
+
+  // hint mínimo
+  const mh=document.getElementById('minHint');
+  if(total<MIN_T){
+    mh.innerHTML=`Añade <span class="hl">${MIN_T-total} tarea${(MIN_T-total)!==1?'s':''} más</span> para que este día cuente 🎁`;
+    mh.className='min-hint';
+  } else if(isDone){
+    mh.innerHTML=`<span class="hl done">✓ Día completado</span> — cuenta para tu regalo semanal`;
+    mh.className='min-hint done';
+  } else {
+    mh.innerHTML=`${pctD}% completado · necesitas el ${GOAL_P}% para que cuente`;
+    mh.className='min-hint';
+  }
+
+  // reward
+  const ra=document.getElementById('rewardArea');
+  if(doneDays()>=GOAL_D){
+    const g=weekGift();
+    ra.innerHTML=`<div class="reward-banner" onclick="openGift()">
+      <span class="rb-ico">${g.i}</span>
+      <div class="rb-txt"><strong>¡Tienes una sorpresa!</strong><span>Toca para verla</span></div>
+    </div>`;
+  } else ra.innerHTML='';
+
+  document.getElementById('pendingList').innerHTML=
+    pending.length===0
+      ? `<div class="empty">Sin tareas pendientes hoy</div>`
+      : pending.map(tHTML).join('');
+  document.getElementById('doneList').innerHTML=done.map(tHTML).join('');
+  document.getElementById('doneSec').style.display=done.length?'block':'none';
+}
+
+function tHTML(t){
+  const labels={teoría:'Teoría',test:'Test',repaso:'Repaso',salud:'Salud',personal:'Personal'};
+  return `<div class="task${t.done?' done':''}">
+    <div class="chk" onclick="toggle('${t.id}')">${t.done?'✓':''}</div>
+    <div class="task-body">
+      <div class="task-txt">${esc(t.text)}</div>
+      ${(t.time||t.tag)?`<div class="task-meta">
+        ${t.time?`<span class="task-time">${t.time}</span>`:''}
+        ${t.tag?`<span class="task-tag" data-cat="${t.tag}">${labels[t.tag]||t.tag}</span>`:''}
+      </div>`:''}
+    </div>
+    <button class="del" onclick="delTask('${t.id}')">×</button>
+  </div>`;
+}
+
+/* ── Acciones ── */
+function addTask(){
+  const inp=document.getElementById('tInp'),txt=inp.value.trim();
+  if(!txt)return;
+  const tasks=gt(sel);
+  tasks.push({id:Date.now().toString(),text:txt,time:document.getElementById('tTime').value,tag:document.getElementById('tTag').value,done:false});
+  st(sel,tasks);inp.value='';renderAll();inp.focus();
+}
+function toggle(id){
+  const tasks=gt(sel),t=tasks.find(x=>x.id===id);
+  if(!t)return;
+  t.done=!t.done;st(sel,tasks);renderAll();
+  if(doneDays()>=GOAL_D&&!giftShown[wk()]){giftShown[wk()]=true;setTimeout(openGift,600)}
+}
+function delTask(id){st(sel,gt(sel).filter(x=>x.id!==id));renderAll()}
+function saveNote(){sn(sel,document.getElementById('noteArea').value)}
+function renderNote(){document.getElementById('noteArea').value=gn(sel)}
+
+function setTab(tab,btn){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));btn.classList.add('active');
+  document.getElementById('tabTasks').style.display=tab==='tasks'?'block':'none';
+  document.getElementById('tabNotes').style.display=tab==='notes'?'block':'none';
+}
+
+/* ── Regalo ── */
+function openGift(){
+  const g=weekGift();
+  document.getElementById('giftTxt').innerHTML=`${g.i}<br>${g.t}`;
+  document.getElementById('giftModal').classList.remove('hidden');
+}
+function closeGift(){document.getElementById('giftModal').classList.add('hidden')}
+
+/* ── Pomodoro ── */
+const PR=5*60, CIRC=502.7;
+let PW=25*60; // duración trabajo, cambia con setDur
+let pTimer=null,pLeft=PW,pRun=false,pWork=true,pCount=0;
+
+function setDur(mins, btn){
+  if(pRun) return; // no cambiar mientras corre
+  PW=mins*60; pLeft=PW; pWork=true;
+  document.querySelectorAll('.pdur').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('pMsg').innerHTML='';
+  pDisp();
+}
+function pDisp(){
+  document.getElementById('pTime').textContent=`${p2(Math.floor(pLeft/60))}:${p2(pLeft%60)}`;
+  document.getElementById('pArc').style.strokeDashoffset=CIRC*(1-pLeft/(pWork?PW:PR));
+  document.getElementById('pMode').textContent=pWork?'concentración':'descanso';
+}
+function togglePomo(){
+  if(pRun){
+    clearInterval(pTimer);pRun=false;
+    document.getElementById('pPlayIco').textContent='▶';
+  } else {
+    document.getElementById('pMsg').innerHTML='';
+    pRun=true;document.getElementById('pPlayIco').textContent='⏸';
+    pTimer=setInterval(()=>{
+      pLeft--;pDisp();
+      if(pLeft<=0){
+        clearInterval(pTimer);pRun=false;
+        document.getElementById('pPlayIco').textContent='▶';
+        if(pWork){
+          pCount++;ss('pc_'+dk(today),pCount);
+          document.getElementById('pCount').textContent=pCount;
+          showPMsg();pWork=false;pLeft=PR;
+        } else {pWork=true;pLeft=PW;}
+        pDisp();
+      }
+    },1000);
+  }
+}
+function resetPomo(){
+  clearInterval(pTimer);pRun=false;pWork=true;pLeft=PW;
+  document.getElementById('pPlayIco').textContent='▶';
+  document.getElementById('pMsg').innerHTML='';pDisp();
+}
+function skipPomo(){
+  clearInterval(pTimer);pRun=false;pWork=!pWork;pLeft=pWork?PW:PR;
+  document.getElementById('pPlayIco').textContent='▶';
+  document.getElementById('pMsg').innerHTML='';pDisp();
+}
+function showPMsg(){
+  const m=PMSGS[pCount%PMSGS.length];
+  document.getElementById('pMsg').innerHTML=`<div class="pomo-msg"><div class="pomo-msg-ico">${m.i}</div><div class="pomo-msg-txt">${m.t}</div></div>`;
+}
+
+/* ── Respiración ── */
+let bRun=false,bPhase=0,bTO=null;
+const bPh=[{l:'Inhala',d:4000},{l:'Mantén',d:4000},{l:'Exhala',d:4000}];
+function toggleBreath(){bRun?stopBreath():startBreath()}
+function startBreath(){bRun=true;document.getElementById('bBtn').textContent='Parar';runBPh()}
+function runBPh(){
+  if(!bRun)return;
+  const ph=bPh[bPhase%3],c=document.getElementById('bCircle');
+  document.getElementById('bInst').textContent=ph.l+'...';c.textContent=ph.l;
+  if(ph.l==='Inhala'){c.classList.remove('contract');c.classList.add('expand')}
+  else{c.classList.remove('expand');c.classList.add('contract')}
+  bTO=setTimeout(()=>{bPhase++;runBPh()},ph.d);
+}
+function stopBreath(){
+  bRun=false;clearTimeout(bTO);bPhase=0;
+  const c=document.getElementById('bCircle');
+  c.classList.remove('expand','contract');c.textContent='Empezar';
+  document.getElementById('bInst').textContent='';
+  document.getElementById('bBtn').textContent='Empezar';
+}
+
+/* ── Acertijos ── */
+let rIdx=0;
+function loadRiddle(){
+  document.getElementById('rQ').textContent=RIDDLES[rIdx].q;
+  document.getElementById('rAns').textContent='';
+  document.getElementById('rAns').classList.remove('show');
+}
+function showAns(){
+  const el=document.getElementById('rAns');
+  el.textContent='→ '+RIDDLES[rIdx].a;
+  el.classList.add('show');
+  // scroll suave para que la respuesta quede visible sin tener que bajar manualmente
+  setTimeout(()=>el.scrollIntoView({behavior:'smooth',block:'nearest'}),50);
+}
+function nextRiddle(){rIdx=(rIdx+1)%RIDDLES.length;loadRiddle()}
+
+/* ── Nav ── */
+function go(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  const map={sMain:'nMain',sPomo:'nPomo',sStress:'nStress'};
+  document.querySelectorAll('.ni').forEach(n=>n.classList.remove('active'));
+  if(map[id])document.getElementById(map[id]).classList.add('active');
+  window.scrollTo({top:0,behavior:'instant'});
+  if(id==='sPomo')pDisp();
+}
+function goStress(){
+  stopBreath();
+  document.getElementById('sQuote').textContent=SQUOTES[Math.floor(Math.random()*SQUOTES.length)];
+  rIdx=Math.floor(Math.random()*RIDDLES.length);loadRiddle();
+  go('sStress');
+}
+
+/* ── Init ── */
+pCount=ls('pc_'+dk(today))||0;
+document.getElementById('pCount').textContent=pCount;
+pDisp();renderAll();
+setTimeout(scrollSel,100);
+</script>
+</body>
+</html>
