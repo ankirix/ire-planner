@@ -7,7 +7,6 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Ire">
 <meta name="theme-color" content="#080810">
-<!-- Seguridad: sin referrer externo, sin iframes, solo recursos propios + Google Fonts -->
 <meta name="referrer" content="no-referrer">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
@@ -49,7 +48,6 @@ body{
   background:var(--bg);
   color:var(--text);
   overflow-x:hidden;
-  /* fondo estático — todo scrollea junto */
   background-image:
     radial-gradient(ellipse 60% 50% at 10% 0%,  rgba(176,160,224,.12) 0%,transparent 60%),
     radial-gradient(ellipse 50% 40% at 90% 100%, rgba(232,160,188,.10) 0%,transparent 60%);
@@ -57,21 +55,29 @@ body{
 }
 
 /* ─────────────────────────────────────
-   PANTALLAS — scroll nativo completo
-   SIN position:fixed en el contenido,
-   solo la nav inferior va fija
+   ANIMACIONES GLOBALES
+───────────────────────────────────── */
+@keyframes si        { from{opacity:0;transform:translateY(7px)} to{opacity:1;transform:none} }
+@keyframes fi        { from{opacity:0} to{opacity:1} }
+@keyframes pi        { from{opacity:0;transform:scale(.78)} to{opacity:1;transform:scale(1)} }
+@keyframes bob       { from{transform:translateY(0)} to{transform:translateY(-5px)} }
+@keyframes pulse     { 0%,100%{border-color:rgba(232,192,112,.2)} 50%{border-color:rgba(232,192,112,.38)} }
+@keyframes taskIn    { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:none} }
+@keyframes taskDone  { 0%{transform:scale(1)} 35%{transform:scale(1.045)} 100%{transform:scale(1)} }
+@keyframes chkGlow   { 0%{box-shadow:0 0 0px rgba(232,160,188,0)} 60%{box-shadow:0 0 14px rgba(232,160,188,.7),0 0 28px rgba(232,160,188,.3)} 100%{box-shadow:0 0 8px rgba(232,160,188,.45),0 0 18px rgba(232,160,188,.18)} }
+
+/* ─────────────────────────────────────
+   PANTALLAS
 ───────────────────────────────────── */
 .screen{display:none;min-height:100dvh;padding-bottom:calc(68px + var(--sb))}
 .screen.active{display:block}
 
-/* wrapper centrado */
+/* wrapper centrado — iPhone */
 .w{max-width:390px;margin:0 auto;padding:0 20px}
 
 /* ─────────────────────────────────────
-   PANTALLA PRINCIPAL
+   CABECERA
 ───────────────────────────────────── */
-
-/* ── Cabecera — sin fondo, parte del scroll ── */
 .hdr{padding:calc(22px + var(--st)) 20px 0;max-width:390px;margin:0 auto}
 .hdr-row{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:28px}
 
@@ -91,11 +97,14 @@ body{
   width:34px;height:34px;border-radius:50%;
   border:1px solid var(--line);background:transparent;
   color:var(--sub);font-size:16px;cursor:pointer;
-  display:flex;align-items:center;justify-content:center;transition:all .18s
+  display:flex;align-items:center;justify-content:center;
+  transition:color .2s,border-color .2s,background .2s;
 }
-.hbtn:active{color:var(--rose);border-color:rgba(232,160,188,.3)}
+.hbtn:active{color:var(--rose);border-color:rgba(232,160,188,.3);background:rgba(232,160,188,.06)}
 
-/* ── Frase del día ── */
+/* ─────────────────────────────────────
+   FRASE DEL DÍA
+───────────────────────────────────── */
 .quote{
   margin:0 20px 28px;max-width:350px;
   padding-left:14px;
@@ -105,16 +114,11 @@ body{
 .quote-txt{
   font-family:'Lora',serif;font-size:14px;font-style:italic;
   line-height:1.7;color:rgba(237,232,242,.75);
+  text-wrap:pretty;
 }
 
 /* ─────────────────────────────────────
-   CALENDARIO UNIFICADO
-   Una sola fila. Cada día muestra:
-   · nombre abreviado
-   · número
-   · estado: vacío / con puntos / completado (verde) / hoy (anillo)
-   · si es el seleccionado: fondo suave
-   No hay segunda fila de círculos.
+   CALENDARIO
 ───────────────────────────────────── */
 .cal{
   display:flex;gap:5px;
@@ -130,38 +134,38 @@ body{
   padding:9px 0 7px;
   text-align:center;cursor:pointer;
   border:1px solid transparent;
-  transition:all .22s ease;
+  /* transición fluida en todos los estados */
+  transition:background .28s ease, border-color .28s ease, transform .16s ease, box-shadow .28s ease;
   position:relative;
 }
-/* hoy — anillo sutil */
+.day:active{transform:scale(.93)}
 .day.today{border-color:rgba(176,160,224,.35)}
-/* seleccionado */
 .day.sel{
-  background:rgba(237,232,242,.06);
-  border-color:rgba(237,232,242,.14);
+  background:rgba(237,232,242,.07);
+  border-color:rgba(237,232,242,.16);
+  box-shadow:0 2px 12px rgba(237,232,242,.04);
 }
-/* día completado — punto verde abajo */
 .day.complete .day-dot{background:var(--sage)}
-/* hoy + seleccionado */
-.day.today.sel{border-color:rgba(176,160,224,.5)}
+.day.today.sel{border-color:rgba(176,160,224,.52)}
 
-.day-name{font-size:9px;text-transform:uppercase;letter-spacing:.4px;color:var(--sub);margin-bottom:4px}
+.day-name{font-size:9px;text-transform:uppercase;letter-spacing:.4px;color:var(--sub);margin-bottom:4px;transition:color .25s}
 .day.today .day-name{color:var(--lav)}
 .day.sel   .day-name{color:rgba(237,232,242,.7)}
 
-.day-num{font-size:17px;font-weight:400;line-height:1}
+.day-num{font-size:17px;font-weight:400;line-height:1;transition:color .25s}
 .day.today .day-num{color:var(--lav);font-weight:500}
 
-/* indicador inferior: tareas o completado */
 .day-dot{
   width:4px;height:4px;border-radius:50%;
   background:rgba(232,160,188,.4);
   margin:6px auto 0;
-  transition:background .3s;
+  transition:background .3s,opacity .25s;
 }
 .day-dot.hidden{opacity:0}
 
-/* ── Pista de progreso semanal ── */
+/* ─────────────────────────────────────
+   BARRA PROGRESO SEMANAL
+───────────────────────────────────── */
 .week-hint{
   max-width:390px;margin:0 auto;
   padding:8px 20px 20px;
@@ -171,9 +175,8 @@ body{
 .week-fill{
   height:100%;border-radius:2px;
   background:linear-gradient(90deg,var(--lav),var(--rose));
-  transition:width .5s ease;
+  transition:width .6s cubic-bezier(.4,0,.2,1);
 }
-/* puntitos de días debajo de la barra */
 .week-dots{
   max-width:390px;margin:-10px auto 18px;
   padding:0 20px;
@@ -182,34 +185,30 @@ body{
 .wd{
   width:6px;height:6px;border-radius:50%;
   background:var(--line);
-  transition:background .3s ease, transform .3s ease;
+  transition:background .35s ease, transform .35s ease;
 }
-.wd.filled{
-  background:var(--rose);
-  transform:scale(1.2);
-}
+.wd.filled{background:var(--rose);transform:scale(1.2)}
 .wd.gold{background:var(--gold);transform:scale(1.3)}
 .week-label{font-size:11px;color:var(--sub);white-space:nowrap;flex-shrink:0}
 .week-label .hl{color:var(--gold)}
 
-/* ── Divisor ── */
-.divider{height:1px;background:var(--line);margin:0 20px 20px;max-width:350px}
-
 /* ─────────────────────────────────────
-   TABS
+   DIVISOR & TABS
 ───────────────────────────────────── */
+.divider{height:1px;background:var(--line);margin:0 20px 20px;max-width:350px}
 .tabs{display:flex;gap:0;margin:0 20px 20px;border-bottom:1px solid var(--line);max-width:350px}
 .tab{
   padding:8px 16px 10px;font-size:12px;font-weight:500;
   color:var(--sub);cursor:pointer;border:none;background:transparent;
   font-family:'Mulish',sans-serif;
   border-bottom:2px solid transparent;margin-bottom:-1px;
-  transition:all .18s;
+  transition:color .2s,border-color .2s;
+  min-height:44px;display:flex;align-items:center;
 }
 .tab.active{color:var(--text);border-bottom-color:var(--rose)}
 
 /* ─────────────────────────────────────
-   CONTENIDO DIARIO
+   CABECERA DEL DÍA & HINTS
 ───────────────────────────────────── */
 .day-hdr{
   display:flex;align-items:baseline;justify-content:space-between;
@@ -218,12 +217,24 @@ body{
 .day-hdr-title{font-family:'Lora',serif;font-size:20px;font-style:italic;color:var(--text)}
 .day-hdr-badge{font-size:11px;color:var(--sub)}
 
-/* hint mínimo de tareas */
 .min-hint{font-size:11px;color:var(--sub);margin-bottom:14px;line-height:1.6}
 .min-hint .hl{color:var(--lav)}
 .min-hint.done .hl{color:var(--sage)}
 
-/* banner regalo */
+/* progreso del día */
+.day-progress{margin-bottom:18px}
+.dp-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:7px}
+.dp-counter{font-family:'Lora',serif;font-size:22px;font-style:italic;color:var(--text);line-height:1}
+.dp-counter em{font-size:13px;font-style:normal;color:var(--sub);margin-left:4px}
+.dp-hint{font-size:11px;color:var(--sub);text-align:right;line-height:1.4;max-width:55%}
+.dp-hint .hl{color:var(--lav)}
+.dp-hint.hl-done{color:var(--sage)}
+.dp-bar{height:2px;background:var(--line);border-radius:2px;overflow:hidden}
+.dp-fill{height:100%;border-radius:2px;background:linear-gradient(90deg,var(--lav),var(--rose));transition:width .5s cubic-bezier(.4,0,.2,1)}
+
+/* ─────────────────────────────────────
+   BANNER REGALO
+───────────────────────────────────── */
 .reward-banner{
   display:flex;align-items:center;gap:12px;
   padding:13px 14px;border-radius:var(--r);
@@ -231,14 +242,16 @@ body{
   background:rgba(232,192,112,.04);
   margin-bottom:16px;cursor:pointer;
   animation:pulse 3s ease infinite;
+  min-height:44px;
 }
-@keyframes pulse{0%,100%{border-color:rgba(232,192,112,.2)}50%{border-color:rgba(232,192,112,.38)}}
 .reward-banner:active{opacity:.7}
 .rb-ico{font-size:22px;flex-shrink:0}
 .rb-txt strong{font-size:12px;font-weight:500;color:var(--gold);display:block}
 .rb-txt span{font-size:11px;color:var(--sub)}
 
-/* ── Form añadir ── */
+/* ─────────────────────────────────────
+   FORMULARIO AÑADIR
+───────────────────────────────────── */
 .add-form{margin-bottom:16px}
 .add-r1{display:flex;gap:8px;margin-bottom:8px}
 .add-r2{display:flex;gap:8px}
@@ -248,23 +261,29 @@ body{
   border:1px solid var(--line);border-radius:10px;
   padding:10px 12px;color:var(--text);
   font-family:'Mulish',sans-serif;font-size:14px;
-  outline:none;transition:border .18s;
+  outline:none;transition:border .22s,box-shadow .22s;
+  min-height:44px;
 }
-.inp:focus{border-color:rgba(232,160,188,.3)}
+.inp:focus{border-color:rgba(232,160,188,.32);box-shadow:0 0 0 3px rgba(232,160,188,.06)}
 .inp::placeholder{color:var(--sub)}
 .sel-inp{
-  flex:1;min-width:0;background:transparent;
+  flex:1;min-width:0;background:var(--bg);
   border:1px solid var(--line);border-radius:10px;
   padding:9px 10px;color:var(--text);
   font-family:'Mulish',sans-serif;font-size:12px;
-  outline:none;-webkit-appearance:none;
+  outline:none;-webkit-appearance:none;min-height:44px;
+  transition:border .22s;
 }
+.sel-inp option{background:var(--bg);color:var(--text)}
+.sel-inp:focus{border-color:rgba(232,160,188,.32)}
 .time-inp{
   width:88px;flex-shrink:0;background:transparent;
   border:1px solid var(--line);border-radius:10px;
   padding:9px 8px;color:var(--text);
   font-family:'Mulish',sans-serif;font-size:12px;outline:none;
+  min-height:44px;transition:border .22s;
 }
+.time-inp:focus{border-color:rgba(232,160,188,.32)}
 .add-btn{
   flex-shrink:0;
   background:linear-gradient(135deg,var(--rose),var(--lav));
@@ -273,11 +292,15 @@ body{
   font-family:'Mulish',sans-serif;font-size:13px;font-weight:500;
   cursor:pointer;white-space:nowrap;
   box-shadow:0 0 16px rgba(232,160,188,.22),0 4px 10px rgba(176,160,224,.18);
-  transition:opacity .18s,transform .12s;
+  transition:opacity .18s,transform .12s,box-shadow .2s;
+  min-height:44px;
 }
 .add-btn:active{opacity:.8;transform:scale(.95)}
+.add-btn:hover{box-shadow:0 0 22px rgba(232,160,188,.32),0 6px 14px rgba(176,160,224,.24)}
 
-/* ── Selector duración pomodoro ── */
+/* ─────────────────────────────────────
+   SELECTOR DURACIÓN POMODORO
+───────────────────────────────────── */
 .pomo-dur{
   display:flex;gap:0;justify-content:center;margin-bottom:28px;
   border:1px solid var(--line);border-radius:10px;overflow:hidden;
@@ -287,54 +310,69 @@ body{
   flex:1;padding:8px 0;text-align:center;
   font-family:'Mulish',sans-serif;font-size:12px;color:var(--sub);
   background:transparent;border:none;cursor:pointer;
-  transition:all .18s;letter-spacing:.3px;
+  transition:all .2s;letter-spacing:.3px;min-height:44px;
+  display:flex;align-items:center;justify-content:center;
 }
 .pdur.active{background:rgba(232,160,188,.12);color:var(--rose)}
 .pdur+.pdur{border-left:1px solid var(--line)}
 
-/* ── Tareas mejoradas ── */
+/* ─────────────────────────────────────
+   TAREAS — microinteracciones
+───────────────────────────────────── */
 .task{
   display:flex;align-items:center;gap:12px;
   padding:11px 12px;
   border-radius:10px;
   margin-bottom:4px;
-  transition:background .15s;
-  animation:si .18s ease;
+  transition:background .2s, opacity .3s, transform .3s;
+  /* fade-in al aparecer */
+  animation:taskIn .22s ease both;
 }
-.task:hover{background:rgba(237,232,242,.03)}
+.task:hover{background:rgba(237,232,242,.04)}
 .task.done{opacity:.45}
 .task.done .task-txt{text-decoration:line-through}
 
-/* checkbox más elegante — cuadrado redondeado */
+/* animación de escala al marcar */
+.task.completing{
+  animation:taskDone .35s cubic-bezier(.34,1.56,.64,1);
+}
+
+/* checkbox — área táctil 44px, visual solo en chk-inner */
 .chk{
-  width:17px;height:17px;
-  border-radius:5px;
-  border:1px solid rgba(237,232,242,.18);
+  width:44px;height:44px;
   flex-shrink:0;
   display:flex;align-items:center;justify-content:center;
-  font-size:9px;cursor:pointer;transition:all .18s;
+  cursor:pointer;
+  background:transparent;border:none;
+  margin:-13px -13px -13px -13px;
+  border-radius:50%;
 }
-.task.done .chk{
+.chk-inner{
+  width:18px;height:18px;
+  border-radius:5px;
+  border:1px solid rgba(237,232,242,.22);
+  display:flex;align-items:center;justify-content:center;
+  font-size:9px;color:transparent;
+  transition:background .22s,border-color .22s,box-shadow .4s,color .18s;
+  flex-shrink:0;pointer-events:none;
+}
+.task.done .chk-inner{
   background:var(--rose);border-color:transparent;
-  box-shadow:0 0 6px rgba(232,160,188,.3);
+  color:#fff;
+  box-shadow:0 0 8px rgba(232,160,188,.5),0 0 18px rgba(232,160,188,.2);
+  animation:chkGlow .5s ease forwards;
 }
+
 .task-body{flex:1;min-width:0}
 .task-txt{font-size:13px;line-height:1.4;word-break:break-word;color:var(--text)}
 
-/* badges de meta e hora */
 .task-meta{display:flex;gap:5px;margin-top:3px;flex-wrap:wrap;align-items:center}
-.task-time{
-  font-size:10px;color:var(--sub);
-  display:flex;align-items:center;gap:2px;
-}
+.task-time{font-size:10px;color:var(--sub);display:flex;align-items:center;gap:2px}
 .task-time::before{content:'·';margin-right:1px}
 .task-tag{
-  font-size:9px;
-  padding:1px 7px;border-radius:20px;
-  border:1px solid var(--line);
-  color:var(--sub);letter-spacing:.3px;
+  font-size:9px;padding:1px 7px;border-radius:20px;
+  border:1px solid var(--line);color:var(--sub);letter-spacing:.3px;
 }
-/* color por categoría */
 .task-tag[data-cat="teoría"]  {border-color:rgba(176,160,224,.3);color:var(--lav)}
 .task-tag[data-cat="test"]    {border-color:rgba(232,160,188,.3);color:var(--rose)}
 .task-tag[data-cat="repaso"]  {border-color:rgba(232,192,112,.3);color:var(--gold)}
@@ -342,16 +380,15 @@ body{
 .task-tag[data-cat="personal"]{border-color:rgba(237,232,242,.15);color:var(--sub)}
 
 .del{
-  width:18px;height:18px;border:none;background:transparent;
-  color:rgba(237,232,242,.12);font-size:15px;cursor:pointer;
+  width:44px;height:44px;border:none;background:transparent;
+  color:rgba(237,232,242,.12);font-size:18px;cursor:pointer;
   display:flex;align-items:center;justify-content:center;flex-shrink:0;
   transition:color .18s;line-height:1;padding:0;
+  margin:-13px -13px -13px 0;border-radius:50%;
 }
 .del:active{color:rgba(248,113,113,.6)}
 
 .empty{padding:28px 0;color:var(--sub);font-size:12px;text-align:center;letter-spacing:.3px}
-
-/* separador entre pendientes y completadas */
 .tasks-divider{height:1px;background:var(--line);margin:12px 0}
 
 /* notas */
@@ -359,13 +396,17 @@ body{
   width:100%;min-height:120px;background:transparent;
   border:1px solid var(--line);border-radius:var(--r);
   padding:13px;color:var(--text);font-family:'Mulish',sans-serif;
-  font-size:14px;line-height:1.7;resize:none;outline:none;transition:border .18s;
+  font-size:14px;line-height:1.7;resize:none;outline:none;
+  transition:border .22s,box-shadow .22s;
 }
-.note-area:focus{border-color:rgba(232,160,188,.25)}
+.note-area:focus{border-color:rgba(232,160,188,.25);box-shadow:0 0 0 3px rgba(232,160,188,.05)}
 .note-area::placeholder{color:var(--sub)}
 
+/* etiqueta de sección */
+.sec{font-size:10px;text-transform:uppercase;letter-spacing:1.5px;color:var(--sub);margin-bottom:10px;margin-top:4px}
+
 /* ─────────────────────────────────────
-   NAV INFERIOR (único elemento fijo)
+   NAV INFERIOR
 ───────────────────────────────────── */
 .bnav{
   position:fixed;bottom:0;left:0;right:0;
@@ -373,12 +414,12 @@ body{
   border-top:1px solid var(--line);
   display:flex;justify-content:space-around;
   padding:8px 0 calc(8px + var(--sb));z-index:50;
-  /* sin backdrop-filter para evitar glitches iOS */
 }
 .ni{
   display:flex;flex-direction:column;align-items:center;gap:2px;
   padding:4px 20px;border:none;background:transparent;
-  color:var(--sub);font-family:'Mulish',sans-serif;cursor:pointer;transition:color .18s;
+  color:var(--sub);font-family:'Mulish',sans-serif;cursor:pointer;
+  transition:color .2s;min-height:44px;justify-content:center;
 }
 .ni.active{color:var(--rose)}
 .ni span:first-child{font-size:19px}
@@ -387,29 +428,27 @@ body{
 /* ─────────────────────────────────────
    PANTALLA POMODORO
 ───────────────────────────────────── */
+.pomo-layout{
+  max-width:390px;margin:0 auto;
+  padding:calc(24px + var(--st)) 20px 0;
+  min-height:100dvh;
+  padding-bottom:calc(68px + var(--sb));
+}
+
 .back-btn{
   display:flex;align-items:center;gap:5px;
   border:none;background:transparent;color:var(--sub);
   font-family:'Mulish',sans-serif;font-size:13px;cursor:pointer;
-  padding:0;margin-bottom:32px;transition:color .18s;
+  padding:0;margin-bottom:28px;transition:color .18s;
+  min-height:44px;
 }
 .back-btn:active{color:var(--text)}
 
-.pomo-hdr{
-  font-family:'Lora',serif;font-size:22px;font-style:italic;
-  color:var(--text);text-align:center;margin-bottom:4px;
-}
-.pomo-sub{font-size:10px;color:var(--sub);text-align:center;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:36px}
+.pomo-hdr{font-family:'Lora',serif;font-size:22px;font-style:italic;color:var(--text);text-align:center;margin-bottom:4px}
+.pomo-sub{font-size:10px;color:var(--sub);text-align:center;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:32px}
 
-.ring-wrap{
-  width:180px;height:180px;   /* tamaño igual al SVG, sin ambigüedad */
-  position:relative;
-  margin:0 auto 32px;
-}
-.psvg{
-  position:absolute;inset:0;
-  transform:rotate(-90deg);
-}
+.ring-wrap{width:210px;height:210px;position:relative;margin:0 auto 28px}
+.psvg{position:absolute;inset:0;width:100%;height:100%;transform:rotate(-90deg)}
 .p-track{fill:none;stroke:rgba(237,232,242,.05);stroke-width:5}
 .p-arc{fill:none;stroke-width:5;stroke-linecap:round;stroke:url(#pg);transition:stroke-dashoffset .7s ease}
 .ring-center{
@@ -417,95 +456,100 @@ body{
   display:flex;flex-direction:column;align-items:center;justify-content:center;
   pointer-events:none;
 }
-.ptime{font-family:'Lora',serif;font-size:40px;font-weight:400;letter-spacing:-1px;line-height:1}
-.pmode{font-size:9px;text-transform:uppercase;letter-spacing:2px;color:var(--sub);margin-top:6px}
+.ptime{font-family:'Lora',serif;font-size:44px;font-weight:400;letter-spacing:-1px;line-height:1}
+.pmode{font-size:9px;text-transform:uppercase;letter-spacing:2px;color:var(--sub);margin-top:8px}
 
-.pomo-btns{
-  display:flex;gap:14px;align-items:center;justify-content:center;margin-bottom:22px;
-}
+.pomo-btns{display:flex;gap:14px;align-items:center;justify-content:center;margin-bottom:20px}
 .pbtn{
   border:none;border-radius:50%;cursor:pointer;
   display:flex;align-items:center;justify-content:center;
-  transition:all .18s;flex-shrink:0;
-  padding:0;line-height:1;
+  transition:all .2s;flex-shrink:0;padding:0;line-height:1;
   -webkit-appearance:none;
 }
 .pbtn:active{transform:scale(.9)}
 .pbtn.main{
-  width:58px;height:58px;
+  width:62px;height:62px;
   background:linear-gradient(135deg,var(--rose),var(--lav));
-  box-shadow:0 0 18px rgba(232,160,188,.28),0 4px 10px rgba(176,160,224,.2);
+  box-shadow:0 0 22px rgba(232,160,188,.3),0 4px 12px rgba(176,160,224,.22);
 }
-.pbtn.main .pbtn-ico{font-size:18px;line-height:1;display:block}
-.pbtn.sec{
-  width:42px;height:42px;
-  background:transparent;border:1px solid var(--line);color:var(--sub);
-}
+.pbtn.main .pbtn-ico{font-size:20px;line-height:1;display:block}
+.pbtn.sec{width:46px;height:46px;background:transparent;border:1px solid var(--line);color:var(--sub)}
 .pbtn.sec .pbtn-ico{font-size:14px;line-height:1;display:block;font-style:normal}
+.pbtn.sec:hover{border-color:rgba(237,232,242,.15);color:rgba(237,232,242,.6)}
 
-.pomo-count{text-align:center;font-size:12px;color:var(--sub);margin-bottom:24px}
-.pomo-count span{color:var(--rose)}
+.pomo-count{text-align:center;font-size:12px;color:var(--sub);margin-bottom:20px;letter-spacing:.3px}
+.pomo-count span{color:var(--rose);font-weight:500}
 
-.pomo-msg{
-  padding:18px 16px;border-left:2px solid rgba(232,160,188,.3);
-  animation:si .35s ease;
-}
+.pomo-msg{padding:18px 16px;border-left:2px solid rgba(232,160,188,.3);animation:si .35s ease}
 .pomo-msg-ico{font-size:22px;margin-bottom:8px}
-.pomo-msg-txt{
-  font-family:'Lora',serif;font-size:14px;font-style:italic;
-  line-height:1.75;color:rgba(237,232,242,.7);
-}
+.pomo-msg-txt{font-family:'Lora',serif;font-size:14px;font-style:italic;line-height:1.75;color:rgba(237,232,242,.7);text-wrap:pretty}
+
+/* hint lateral — solo en iPad */
+.pomo-side-hint{display:none}
 
 /* ─────────────────────────────────────
-   PANTALLA AGOBIADA
+   PANTALLA RESPIRA — rediseño
 ───────────────────────────────────── */
-.stress-title{font-family:'Lora',serif;font-size:22px;font-style:italic;color:var(--text);margin-bottom:4px}
-.stress-intro{font-size:12px;color:var(--sub);line-height:1.6;margin-bottom:18px}
+.stress-layout{
+  max-width:390px;margin:0 auto;
+  padding:0 20px;
+  display:flex;flex-direction:column;
+  min-height:100dvh;
+  padding-bottom:calc(68px + var(--sb));
+}
 
-.breath-wrap{
-  display:flex;flex-direction:column;align-items:center;
-  margin-bottom:18px;
-}
-.breath-lbl{font-size:9px;text-transform:uppercase;letter-spacing:2px;color:var(--sub);margin-bottom:12px}
+.stress-hdr{margin-bottom:36px}
+.stress-title{font-family:'Lora',serif;font-size:24px;font-style:italic;color:var(--text);margin-bottom:6px}
+.stress-intro{font-size:13px;color:var(--sub);line-height:1.65}
+
+.breath-wrap{display:flex;flex-direction:column;align-items:center;margin-bottom:28px}
+.breath-lbl{font-size:9px;text-transform:uppercase;letter-spacing:2px;color:var(--sub);margin-bottom:22px}
+
 .breath-circle{
-  width:70px;height:70px;border-radius:50%;
-  border:1px solid rgba(142,200,176,.25);
+  width:140px;height:140px;border-radius:50%;
+  border:1.5px solid rgba(142,200,176,.28);
   display:flex;align-items:center;justify-content:center;
-  font-size:10px;color:var(--sage);
-  transition:transform 4s ease;margin-bottom:10px;
+  font-family:'Lora',serif;font-size:13px;font-style:italic;color:var(--sage);
+  transition:transform 4s ease, box-shadow 4s ease, border-color 4s ease;
+  margin-bottom:22px;
+  box-shadow:0 0 0px rgba(142,200,176,0), inset 0 0 0px rgba(142,200,176,0);
 }
-.breath-circle.expand{transform:scale(1.28)}
-.breath-circle.contract{transform:scale(1)}
-.breath-instruct{font-size:12px;color:var(--sub);min-height:16px;margin-bottom:10px}
+.breath-circle.expand{
+  transform:scale(1.22);
+  border-color:rgba(142,200,176,.55);
+  box-shadow:0 0 42px rgba(142,200,176,.14), 0 0 80px rgba(142,200,176,.07), inset 0 0 30px rgba(142,200,176,.04);
+}
+.breath-circle.contract{
+  transform:scale(1);
+  border-color:rgba(142,200,176,.22);
+  box-shadow:0 0 0px rgba(142,200,176,0), inset 0 0 0px rgba(142,200,176,0);
+}
+.breath-instruct{font-size:11px;color:var(--sub);min-height:16px;margin-bottom:18px;letter-spacing:.5px;text-transform:uppercase}
 .breath-btn{
   background:transparent;border:1px solid var(--line);border-radius:10px;
-  padding:7px 20px;color:var(--text);font-family:'Mulish',sans-serif;font-size:12px;
-  cursor:pointer;transition:border .18s;
+  padding:8px 28px;color:var(--text);font-family:'Mulish',sans-serif;font-size:12px;
+  cursor:pointer;transition:border .22s,color .18s;min-height:44px;letter-spacing:.3px;
 }
-.breath-btn:active{border-color:var(--sage)}
+.breath-btn:active{border-color:var(--sage);color:var(--sage)}
+.breath-btn:hover{border-color:rgba(142,200,176,.35)}
 
-.stress-quote{
-  margin-bottom:16px;padding-left:12px;
-  border-left:1px solid rgba(232,160,188,.2);
-}
-.sq-lbl{font-size:9px;text-transform:uppercase;letter-spacing:2px;color:var(--sub);margin-bottom:5px}
-.sq-txt{font-family:'Lora',serif;font-size:13px;font-style:italic;line-height:1.6;color:rgba(237,232,242,.72)}
+.stress-quote{margin-bottom:20px;padding-left:14px;border-left:1px solid rgba(232,160,188,.2)}
+.sq-lbl{font-size:9px;text-transform:uppercase;letter-spacing:2px;color:var(--sub);margin-bottom:7px}
+.sq-txt{font-family:'Lora',serif;font-size:14px;font-style:italic;line-height:1.7;color:rgba(237,232,242,.75);text-wrap:pretty}
 
-.riddle-wrap{border-top:1px solid var(--line);padding-top:16px}
-.riddle-lbl{font-size:9px;text-transform:uppercase;letter-spacing:2px;color:var(--sub);margin-bottom:8px}
-.riddle-q{font-size:13px;line-height:1.55;color:var(--text);margin-bottom:12px}
+.riddle-wrap{border-top:1px solid var(--line);padding-top:20px}
+.riddle-lbl{font-size:9px;text-transform:uppercase;letter-spacing:2px;color:var(--sub);margin-bottom:10px}
+.riddle-q{font-size:13px;line-height:1.6;color:var(--text);margin-bottom:14px;text-wrap:pretty}
 .riddle-btns{display:flex;gap:8px;flex-wrap:wrap}
 .rbtn{
   background:transparent;border:1px solid var(--line);border-radius:9px;
-  padding:6px 12px;color:var(--sub);font-family:'Mulish',sans-serif;font-size:11px;
-  cursor:pointer;transition:all .18s;
+  padding:7px 14px;color:var(--sub);font-family:'Mulish',sans-serif;font-size:11px;
+  cursor:pointer;transition:all .2s;min-height:44px;
+  display:flex;align-items:center;
 }
-.rbtn:active{color:var(--lav);border-color:rgba(176,160,224,.3)}
-/* respuesta inline — no añade altura nueva, aparece debajo de los botones */
-.riddle-ans{
-  font-size:13px;color:var(--sage);margin-top:10px;
-  line-height:1.5;display:none;
-}
+.rbtn:active{color:var(--lav);border-color:rgba(176,160,224,.35)}
+.rbtn:hover{border-color:rgba(237,232,242,.15);color:rgba(237,232,242,.6)}
+.riddle-ans{font-size:13px;color:var(--sage);margin-top:12px;line-height:1.55;display:none}
 .riddle-ans.show{display:block;animation:si .25s ease}
 
 /* ─────────────────────────────────────
@@ -518,7 +562,6 @@ body{
   padding:24px;animation:fi .25s ease;
 }
 .modal-ov.hidden{display:none}
-@keyframes fi{from{opacity:0}to{opacity:1}}
 .modal-box{
   max-width:310px;width:100%;
   padding:32px 24px;
@@ -527,29 +570,266 @@ body{
   text-align:center;
   animation:pi .38s cubic-bezier(.34,1.56,.64,1);
 }
-@keyframes pi{from{opacity:0;transform:scale(.78)}to{opacity:1;transform:scale(1)}}
 .m-ico{font-size:46px;margin-bottom:10px;display:block;animation:bob .9s ease infinite alternate}
-@keyframes bob{from{transform:translateY(0)}to{transform:translateY(-5px)}}
-.m-title{
-  font-family:'Lora',serif;font-size:22px;font-style:italic;
-  color:var(--text);margin-bottom:6px;
-}
+.m-title{font-family:'Lora',serif;font-size:22px;font-style:italic;color:var(--text);margin-bottom:6px}
 .m-sub{font-size:12px;color:var(--sub);margin-bottom:20px;line-height:1.6}
-.m-gift{
-  border-top:1px solid var(--line);border-bottom:1px solid var(--line);
-  padding:16px 0;margin-bottom:20px;
-}
+.m-gift{border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:16px 0;margin-bottom:20px}
 .m-gift-lbl{font-size:9px;text-transform:uppercase;letter-spacing:1.8px;color:var(--sub);margin-bottom:8px}
 .m-gift-txt{font-family:'Lora',serif;font-size:16px;font-style:italic;color:rgba(237,232,242,.85);line-height:1.6}
 .m-close{
   background:linear-gradient(135deg,var(--rose),var(--lav));
   border:none;border-radius:11px;padding:11px 32px;
   color:#fff;font-family:'Mulish',sans-serif;font-size:13px;font-weight:500;
-  cursor:pointer;
-  box-shadow:0 0 16px rgba(232,160,188,.22);
-  transition:opacity .18s;
+  cursor:pointer;box-shadow:0 0 16px rgba(232,160,188,.22);
+  transition:opacity .18s;min-height:44px;
 }
 .m-close:active{opacity:.8}
+
+/* ═══════════════════════════════════════
+   LAYOUT iPad — ≥768px: dos columnas
+═══════════════════════════════════════ */
+@media (min-width: 768px) {
+
+  /* El body no scrollea globalmente en iPad */
+  body{overflow:hidden}
+
+  /* Pantalla principal: grid 2 columnas — solo cuando está activa */
+  #sMain.active{
+    display:grid;
+    grid-template-columns:360px 1fr;
+    grid-template-rows:100dvh;
+    height:100dvh;
+    min-height:unset;
+    overflow:hidden;
+    padding-bottom:0;
+  }
+
+  /* Columna izquierda — scrollable, separador derecho */
+  #colLeft{
+    height:100dvh;
+    overflow-y:auto;
+    overflow-x:hidden;
+    scrollbar-width:none;
+    border-right:1px solid var(--line);
+    padding-bottom:calc(80px + var(--sb));
+    /* fondo ligeramente diferenciado */
+    background:rgba(237,232,242,.012);
+  }
+  #colLeft::-webkit-scrollbar{display:none}
+
+  /* Columna derecha — scrollable */
+  #colRight{
+    height:100dvh;
+    overflow-y:auto;
+    overflow-x:hidden;
+    scrollbar-width:none;
+    padding:0 40px;
+    padding-top:0;
+    padding-bottom:calc(80px + var(--sb));
+  }
+  #colRight::-webkit-scrollbar{display:none}
+
+  /* Quitar max-width en columna izquierda */
+  #colLeft .hdr,
+  #colLeft .quote,
+  #colLeft .cal,
+  #colLeft .week-hint,
+  #colLeft .week-dots,
+  #colLeft .divider{max-width:none}
+
+  /* Cabecera en iPad */
+  #colLeft .hdr{padding-right:24px;padding-left:28px}
+  #colLeft .hdr-row{margin-bottom:32px}
+  .brand-name{font-size:28px}
+  .brand-sub{font-size:11px;margin-top:6px}
+
+  /* Frase del día más grande */
+  #colLeft .quote{margin:0 28px 32px;max-width:none}
+  .quote-txt{font-size:15px;line-height:1.8}
+
+  /* Calendario — grid que encaja sin scroll ni clipping */
+  #colLeft .cal{
+    display:grid;
+    grid-template-columns:repeat(7,1fr);
+    overflow-x:visible;
+    padding:0 20px 8px;
+    gap:5px;
+  }
+  #colLeft .day{width:auto;border-radius:12px;padding:10px 0 8px}
+  .day-num{font-size:18px}
+
+  /* Barra de progreso */
+  #colLeft .week-hint{padding:10px 28px 22px}
+  #colLeft .week-dots{padding:0 28px;margin-bottom:24px}
+
+  /* Divisor */
+  #colLeft .divider{margin:0 28px 0;max-width:none}
+
+  /* ── Columna derecha — más espacio y tipografía mayor ── */
+
+  /* Tabs */
+  #colRight .tabs{
+    margin:calc(28px + var(--st)) 0 28px;
+    max-width:none;
+    border-bottom:1px solid var(--line);
+  }
+  .tab{font-size:13px;padding:10px 22px 12px}
+  .tab.active{border-bottom-color:var(--rose)}
+
+  /* Wrapper sin max-width en columna derecha */
+  #colRight .w{max-width:none;padding:0}
+
+  /* Cabecera del día más grande */
+  .day-hdr-title{font-size:26px}
+  .day-hdr-badge{font-size:12px}
+  .day-hdr{margin-bottom:20px}
+
+  /* Hint */
+  .min-hint{font-size:12px;margin-bottom:18px}
+
+  /* Tareas más espaciadas */
+  .task{padding:14px 16px;margin-bottom:6px;border-radius:12px}
+  .task:hover{background:rgba(237,232,242,.05)}
+  .task-txt{font-size:14px}
+  .task-meta{margin-top:5px}
+  .task-time{font-size:11px}
+  .task-tag{font-size:10px;padding:2px 9px}
+
+  /* Checkbox y botón borrar con área táctil cómoda */
+  .chk{min-width:44px;min-height:44px}
+  .del{width:44px;height:44px;font-size:20px}
+
+  /* Formulario */
+  .add-form{margin-bottom:28px}
+  .add-r1{margin-bottom:10px}
+  .inp{font-size:15px;padding:12px 16px;border-radius:12px}
+  .sel-inp{font-size:13px;padding:11px 14px;border-radius:12px}
+  .time-inp{width:100px;padding:11px 10px;border-radius:12px;font-size:13px}
+  .add-btn{font-size:14px;padding:12px 20px;border-radius:12px}
+
+  /* Notas */
+  .note-area{min-height:180px;font-size:15px;padding:16px;border-radius:16px}
+
+  /* Banner regalo */
+  .reward-banner{padding:16px 18px;border-radius:16px;margin-bottom:20px}
+  .rb-txt strong{font-size:13px}
+  .rb-txt span{font-size:12px}
+
+  /* Sección etiquetas */
+  .sec{font-size:11px;margin-bottom:12px}
+
+  /* ── Stats iPad ── */
+  #ipadStats{display:block}
+  .ipad-stats{padding:24px 20px 0}
+  .ipad-stats-title{font-size:9px;text-transform:uppercase;letter-spacing:2px;color:var(--sub);margin-bottom:18px}
+  .stat-cards{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+  .stat-card{padding:16px 14px;border-radius:12px;border:1px solid var(--line);background:rgba(237,232,242,.025)}
+  .stat-card-val{font-family:'Lora',serif;font-size:28px;font-style:italic;line-height:1;margin-bottom:5px}
+  .stat-card-lbl{font-size:10px;color:var(--sub);letter-spacing:.4px}
+  .stat-card.rose .stat-card-val{color:var(--rose)}
+  .stat-card.lav  .stat-card-val{color:var(--lav)}
+  .stat-card.sage .stat-card-val{color:var(--sage)}
+  .stat-card.gold .stat-card-val{color:var(--gold)}
+  .stat-foot{padding:14px 16px;border-radius:12px;border:1px solid var(--line);background:rgba(237,232,242,.025);display:flex;align-items:center;gap:14px;margin-top:2px}
+  .stat-foot-ico{font-size:20px;flex-shrink:0}
+  .stat-foot-txt{font-size:12px;color:var(--sub);line-height:1.55}
+  .stat-foot-txt strong{color:var(--text);font-weight:500}
+
+  /* Pantallas Pomodoro y Respira — centradas, sin grid */
+  #sPomo.active{
+    height:100dvh;
+    min-height:unset;
+    padding-bottom:0;
+  }
+  .pomo-layout{
+    max-width:none;
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    height:100dvh;
+    padding:0;
+    min-height:unset;
+  }
+  .pomo-col-main{
+    display:flex;flex-direction:column;
+    justify-content:center;align-items:center;
+    padding:calc(32px + var(--st)) 52px calc(90px + var(--sb));
+    border-right:1px solid var(--line);
+    text-align:center;
+  }
+  .pomo-col-main .back-btn{align-self:flex-start;margin-bottom:32px}
+  .pomo-col-main .pomo-hdr{font-size:26px}
+  .pomo-col-main .ring-wrap{width:260px;height:260px;margin-bottom:32px}
+  .pomo-col-main .ptime{font-size:54px}
+  .pomo-col-main .pomo-dur{margin-bottom:36px}
+  .pomo-col-main .pbtn.main{width:70px;height:70px}
+  .pomo-col-main .pbtn.main .pbtn-ico{font-size:22px}
+  .pomo-col-main .pbtn.sec{width:52px;height:52px}
+
+  .pomo-col-side{
+    display:flex;flex-direction:column;justify-content:center;
+    padding:calc(48px + var(--st)) 52px calc(90px + var(--sb));
+    overflow-y:auto;scrollbar-width:none;
+    gap:32px;
+  }
+  .pomo-col-side::-webkit-scrollbar{display:none}
+  .pomo-side-hint{display:block}
+  .pomo-side-hint .sq-txt{font-size:15px;line-height:1.8}
+  .pomo-msg{padding:22px 20px;border-left:2px solid rgba(232,160,188,.3)}
+  .pomo-msg-txt{font-size:15px;line-height:1.8}
+
+  /* Respira — dos columnas en iPad */
+  #sStress.active{
+    height:100dvh;
+    min-height:unset;
+    padding-bottom:0;
+  }
+  .stress-layout{
+    max-width:none;
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    height:100dvh;
+    padding:0;
+    min-height:unset;
+  }
+  .stress-col-breath{
+    display:flex;flex-direction:column;
+    justify-content:center;
+    padding:calc(32px + var(--st)) 52px calc(90px + var(--sb));
+    border-right:1px solid var(--line);
+  }
+  .stress-col-breath .back-btn{margin-bottom:40px}
+  .stress-col-breath .stress-hdr{margin-bottom:44px}
+  .stress-col-breath .breath-wrap{align-items:flex-start}
+  .stress-col-breath .breath-wrap .breath-lbl{align-self:center}
+  .stress-col-breath .breath-wrap .breath-circle{width:180px;height:180px;align-self:center}
+  .stress-col-breath .breath-wrap .breath-instruct{align-self:center}
+  .stress-col-breath .breath-wrap .breath-btn{align-self:center}
+  .stress-title{font-size:28px}
+  .sq-txt{font-size:15px;line-height:1.8}
+
+  .stress-col-right{
+    display:flex;flex-direction:column;justify-content:center;
+    padding:calc(48px + var(--st)) 52px calc(90px + var(--sb));
+    overflow-y:auto;scrollbar-width:none;
+    gap:32px;
+  }
+  .stress-col-right::-webkit-scrollbar{display:none}
+  .stress-col-right .stress-quote{margin-bottom:0}
+  .stress-col-right .riddle-wrap{padding-top:32px}
+  .riddle-q{font-size:14px;line-height:1.65}
+
+  /* Nav inferior más generoso en iPad */
+  .bnav{padding:10px 0 calc(10px + var(--sb))}
+  .ni{padding:6px 32px}
+  .ni span:first-child{font-size:20px}
+  .ni span:last-child{font-size:10px}
+}
+
+/* ── iPad grande / landscape — columna izquierda algo más ancha ── */
+@media (min-width: 1024px) {
+  #sMain{grid-template-columns:400px 1fr}
+  #colRight{padding:0 56px;padding-bottom:calc(80px + var(--sb))}
+}
 </style>
 </head>
 <body>
@@ -571,163 +851,218 @@ body{
 <!-- ═══════════════════ PRINCIPAL ═══════════════════ -->
 <div id="sMain" class="screen active">
 
-  <!-- cabecera — scrollea con todo -->
-  <div class="hdr">
-    <div class="hdr-row">
-      <div>
-        <div class="brand-name"><em>Ire</em></div>
-        <div class="brand-sub">tu compañera del MIR</div>
-      </div>
-      <div class="hdr-btns">
-        <button class="hbtn" onclick="go('sPomo')" title="Pomodoro">⏱</button>
-        <button class="hbtn" onclick="goStress()" title="Respira">🫂</button>
-      </div>
-    </div>
-  </div>
+  <!-- COLUMNA IZQUIERDA: cabecera, frase, calendario, progreso -->
+  <div id="colLeft">
 
-  <!-- frase del día -->
-  <div class="quote">
-    <div class="quote-lbl">Frase del día</div>
-    <div class="quote-txt" id="quoteEl"></div>
-  </div>
-
-  <!-- ── CALENDARIO UNIFICADO ──
-       Una sola fila. Cada chip muestra:
-       · nombre día · número
-       · punto: rosa = tiene tareas, verde = día completado
-       · borde: lav = hoy, blanco suave = seleccionado
-       · progreso semanal debajo como línea fina -->
-  <div class="cal" id="cal"></div>
-
-  <!-- barra progreso semanal -->
-  <div class="week-hint">
-    <div class="week-track"><div class="week-fill" id="wFill" style="width:0%"></div></div>
-    <div class="week-label" id="wLabel"></div>
-  </div>
-  <!-- puntitos decorativos de días -->
-  <div class="week-dots" id="wDots"></div>
-
-  <div class="divider"></div>
-
-  <!-- tabs -->
-  <div class="tabs" style="margin:0 20px 18px">
-    <button class="tab active" onclick="setTab('tasks',this)">Tareas</button>
-    <button class="tab" onclick="setTab('notes',this)">Notas</button>
-  </div>
-
-  <div class="w">
-    <!-- tab tareas -->
-    <div id="tabTasks">
-      <div class="day-hdr" id="dayHdr"></div>
-      <div class="min-hint" id="minHint"></div>
-      <div id="rewardArea"></div>
-
-      <div class="add-form">
-        <div class="add-r1">
-          <input class="inp" id="tInp" placeholder="Nueva tarea..." onkeydown="if(event.key==='Enter')addTask()">
-          <button class="add-btn" onclick="addTask()">+ Añadir</button>
+    <div class="hdr">
+      <div class="hdr-row">
+        <div>
+          <div class="brand-name"><em>Ire</em></div>
+          <div class="brand-sub">tu compañera del MIR</div>
         </div>
-        <div class="add-r2">
-          <input class="time-inp" id="tTime" type="time">
-          <select class="sel-inp" id="tTag">
-            <option value="">Sin categoría</option>
-            <option value="teoría">Teoría</option>
-            <option value="test">Test</option>
-            <option value="repaso">Repaso</option>
-            <option value="salud">Salud</option>
-            <option value="personal">Personal</option>
-          </select>
+        <div class="hdr-btns">
+          <button class="hbtn" onclick="go('sPomo')" title="Pomodoro">⏱</button>
+          <button class="hbtn" onclick="goStress()" title="Respira">🫂</button>
         </div>
       </div>
+    </div>
 
-      <div class="sec">Pendientes</div>
-      <div id="pendingList"></div>
-      <div id="doneSec" style="display:none">
-        <div class="sec" style="margin-top:16px">Completadas</div>
-        <div id="doneList"></div>
+    <div class="quote">
+      <div class="quote-lbl">Frase del día</div>
+      <div class="quote-txt" id="quoteEl"></div>
+    </div>
+
+    <div class="cal" id="cal"></div>
+
+    <div class="week-hint">
+      <div class="week-track"><div class="week-fill" id="wFill" style="width:0%"></div></div>
+      <div class="week-label" id="wLabel"></div>
+    </div>
+    <div class="week-dots" id="wDots"></div>
+
+    <div class="divider"></div>
+
+    <!-- Stats — solo visible en iPad -->
+    <div id="ipadStats" style="display:none">
+      <div class="ipad-stats">
+        <div class="ipad-stats-title">Esta semana</div>
+        <div class="stat-cards">
+          <div class="stat-card rose">
+            <div class="stat-card-val" id="statDays">0</div>
+            <div class="stat-card-lbl">días completados</div>
+          </div>
+          <div class="stat-card lav">
+            <div class="stat-card-val" id="statTasks">0</div>
+            <div class="stat-card-lbl">tareas hechas</div>
+          </div>
+          <div class="stat-card sage">
+            <div class="stat-card-val" id="statPending">0</div>
+            <div class="stat-card-lbl">pendientes hoy</div>
+          </div>
+          <div class="stat-card gold">
+            <div class="stat-card-val" id="statPomos">0</div>
+            <div class="stat-card-lbl">pomodoros hoy</div>
+          </div>
+        </div>
+        <div class="stat-foot" id="statFoot">
+          <span class="stat-foot-ico">🌱</span>
+          <div class="stat-foot-txt" id="statMsg"></div>
+        </div>
       </div>
     </div>
 
-    <!-- tab notas -->
-    <div id="tabNotes" style="display:none">
-      <textarea class="note-area" id="noteArea"
-        placeholder="Ideas, dudas, cómo te sientes hoy..."
-        oninput="saveNote()"></textarea>
+  </div><!-- /colLeft -->
+
+  <!-- COLUMNA DERECHA: tabs, tareas, formulario, notas -->
+  <div id="colRight">
+
+    <div class="tabs" style="margin:0 20px 18px">
+      <button class="tab active" onclick="setTab('tasks',this)">Tareas</button>
+      <button class="tab" onclick="setTab('notes',this)">Notas</button>
     </div>
-  </div>
-</div>
+
+    <div class="w">
+
+      <!-- tab tareas -->
+      <div id="tabTasks">
+        <div class="day-hdr" id="dayHdr"></div>
+        <div id="dayProgress" class="day-progress"></div>
+        <div class="min-hint" id="minHint" style="display:none"></div>
+        <div id="rewardArea"></div>
+
+        <div class="add-form">
+          <div class="add-r1">
+            <input class="inp" id="tInp" placeholder="Nueva tarea..." onkeydown="if(event.key==='Enter')addTask()">
+            <button class="add-btn" onclick="addTask()">+ Añadir</button>
+          </div>
+          <div class="add-r2">
+            <input class="time-inp" id="tTime" type="time">
+            <select class="sel-inp" id="tTag">
+              <option value="">Sin categoría</option>
+              <option value="teoría">Teoría</option>
+              <option value="test">Test</option>
+              <option value="repaso">Repaso</option>
+              <option value="salud">Salud</option>
+              <option value="personal">Personal</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="sec">Pendientes</div>
+        <div id="pendingList"></div>
+        <div id="doneSec" style="display:none">
+          <div class="sec" style="margin-top:16px">Completadas</div>
+          <div id="doneList"></div>
+        </div>
+      </div>
+
+      <!-- tab notas -->
+      <div id="tabNotes" style="display:none">
+        <textarea class="note-area" id="noteArea"
+          placeholder="Ideas, dudas, cómo te sientes hoy..."
+          oninput="saveNote()"></textarea>
+      </div>
+
+    </div><!-- /w -->
+
+  </div><!-- /colRight -->
+
+</div><!-- /sMain -->
 
 <!-- ═══════════════════ POMODORO ═══════════════════ -->
 <div id="sPomo" class="screen">
-  <div class="w" style="padding-top:calc(24px + var(--st))">
-    <button class="back-btn" onclick="go('sMain')">← Volver</button>
-    <div class="pomo-hdr">Modo estudio</div>
-    <div class="pomo-sub">concentración · sin distracciones</div>
+  <div class="pomo-layout">
 
-    <!-- selector de duración minimalista -->
-    <div class="pomo-dur" id="pomoDur">
-      <button class="pdur active" onclick="setDur(25,this)">25 min</button>
-      <button class="pdur" onclick="setDur(45,this)">45 min</button>
-      <button class="pdur" onclick="setDur(60,this)">60 min</button>
+    <!-- Columna principal: timer -->
+    <div class="pomo-col-main">
+      <button class="back-btn" onclick="go('sMain')">← Volver</button>
+      <div class="pomo-hdr">Modo estudio</div>
+      <div class="pomo-sub">concentración · sin distracciones</div>
+
+      <div class="pomo-dur" id="pomoDur">
+        <button class="pdur active" onclick="setDur(25,this)">25 min</button>
+        <button class="pdur" onclick="setDur(45,this)">45 min</button>
+        <button class="pdur" onclick="setDur(60,this)">60 min</button>
+      </div>
+
+      <div class="ring-wrap">
+        <svg class="psvg" width="210" height="210" viewBox="0 0 180 180">
+          <defs>
+            <linearGradient id="pg" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stop-color="#b0a0e0"/>
+              <stop offset="100%" stop-color="#e8a0bc"/>
+            </linearGradient>
+          </defs>
+          <circle class="p-track" cx="90" cy="90" r="80"/>
+          <circle class="p-arc" id="pArc" cx="90" cy="90" r="80"
+            stroke-dasharray="502.7" stroke-dashoffset="0"/>
+        </svg>
+        <div class="ring-center">
+          <div class="ptime" id="pTime">25:00</div>
+          <div class="pmode" id="pMode">listo</div>
+        </div>
+      </div>
+
+      <div class="pomo-btns">
+        <button class="pbtn sec" onclick="resetPomo()"><span class="pbtn-ico">↺</span></button>
+        <button class="pbtn main" id="pPlay" onclick="togglePomo()"><span class="pbtn-ico" id="pPlayIco">▶</span></button>
+        <button class="pbtn sec" onclick="skipPomo()"><span class="pbtn-ico">⏭</span></button>
+      </div>
+
+      <div class="pomo-count">Pomodoros hoy: <span id="pCount">0</span></div>
     </div>
 
-    <div class="ring-wrap">
-      <svg class="psvg" width="180" height="180" viewBox="0 0 180 180">
-        <defs>
-          <linearGradient id="pg" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stop-color="#b0a0e0"/>
-            <stop offset="100%" stop-color="#e8a0bc"/>
-          </linearGradient>
-        </defs>
-        <circle class="p-track" cx="90" cy="90" r="80"/>
-        <circle class="p-arc" id="pArc" cx="90" cy="90" r="80"
-          stroke-dasharray="502.7" stroke-dashoffset="0"/>
-      </svg>
-      <div class="ring-center">
-        <div class="ptime" id="pTime">25:00</div>
-        <div class="pmode" id="pMode">listo</div>
+    <!-- Columna lateral: mensajes + contexto -->
+    <div class="pomo-col-side">
+      <div id="pMsg"></div>
+      <div class="pomo-side-hint">
+        <div class="sq-lbl" style="margin-bottom:10px">Mientras estudias</div>
+        <div class="sq-txt">La concentración no es la ausencia de distracción. Es volver, una y otra vez, a lo que importa.</div>
+        <div style="height:28px"></div>
+        <div class="sq-lbl" style="margin-bottom:10px">Recuerda</div>
+        <div class="sq-txt">Cada pomodoro terminado es una promesa cumplida. No con nadie más — contigo misma.</div>
       </div>
     </div>
 
-    <div class="pomo-btns">
-      <button class="pbtn sec" onclick="resetPomo()"><span class="pbtn-ico">↺</span></button>
-      <button class="pbtn main" id="pPlay" onclick="togglePomo()"><span class="pbtn-ico" id="pPlayIco">▶</span></button>
-      <button class="pbtn sec" onclick="skipPomo()"><span class="pbtn-ico">⏭</span></button>
-    </div>
-
-    <div class="pomo-count">Pomodoros hoy: <span id="pCount">0</span></div>
-    <div id="pMsg"></div>
   </div>
 </div>
 
-<!-- ═══════════════════ AGOBIADA ═══════════════════ -->
+<!-- ═══════════════════ RESPIRA ═══════════════════ -->
 <div id="sStress" class="screen">
-  <div class="w" style="padding-top:calc(24px + var(--st))">
-    <button class="back-btn" onclick="go('sMain')">← Volver</button>
-    <div class="stress-title">Respira, Ire.</div>
-    <div class="stress-intro">Para un momento.<br>No tienes que saberlo todo a la vez.</div>
+  <div class="stress-layout">
 
-    <div class="breath-wrap">
-      <div class="breath-lbl">Respiración 4 · 4 · 4</div>
-      <div class="breath-circle" id="bCircle">Empezar</div>
-      <div class="breath-instruct" id="bInst"></div>
-      <button class="breath-btn" id="bBtn" onclick="toggleBreath()">Empezar</button>
-    </div>
-
-    <div class="stress-quote">
-      <div class="sq-lbl">Para este momento</div>
-      <div class="sq-txt" id="sQuote"></div>
-    </div>
-
-    <div class="riddle-wrap">
-      <div class="riddle-lbl">Desconecta un momento</div>
-      <div class="riddle-q" id="rQ"></div>
-      <div class="riddle-btns">
-        <button class="rbtn" onclick="showAns()">Ver respuesta</button>
-        <button class="rbtn" onclick="nextRiddle()">Otro acertijo</button>
+    <!-- Columna izquierda: respiración -->
+    <div class="stress-col-breath">
+      <button class="back-btn" onclick="go('sMain')">← Volver</button>
+      <div class="stress-hdr">
+        <div class="stress-title">Respira, Ire.</div>
+        <div class="stress-intro">Para un momento.<br>No tienes que saberlo todo a la vez.</div>
       </div>
-      <div class="riddle-ans" id="rAns"></div>
+      <div class="breath-wrap">
+        <div class="breath-lbl">Respiración 4 · 4 · 4</div>
+        <div class="breath-circle" id="bCircle">Empezar</div>
+        <div class="breath-instruct" id="bInst"></div>
+        <button class="breath-btn" id="bBtn" onclick="toggleBreath()">Empezar</button>
+      </div>
     </div>
+
+    <!-- Columna derecha: cita + acertijo -->
+    <div class="stress-col-right">
+      <div class="stress-quote">
+        <div class="sq-lbl">Para este momento</div>
+        <div class="sq-txt" id="sQuote"></div>
+      </div>
+      <div class="riddle-wrap">
+        <div class="riddle-lbl">Desconecta un momento</div>
+        <div class="riddle-q" id="rQ"></div>
+        <div class="riddle-btns">
+          <button class="rbtn" onclick="showAns()">Ver respuesta</button>
+          <button class="rbtn" onclick="nextRiddle()">Otro acertijo</button>
+        </div>
+        <div class="riddle-ans" id="rAns"></div>
+      </div>
+    </div>
+
   </div>
 </div>
 
@@ -836,14 +1171,41 @@ function weekGift(){
 
 /* ── Render ── */
 function renderAll(){
-  renderQuote();renderCal();renderWeekBar();renderDayHdr();renderTasks();renderNote();
+  renderQuote();renderCal();renderWeekBar();renderDayHdr();renderTasks();renderNote();renderStats();
+}
+
+function renderStats(){
+  const days=weekDays();
+  const doneD=doneDays();
+  const weekTasks=days.reduce((acc,d)=>{const t=gt(dk(d));return acc+t.filter(x=>x.done).length},0);
+  const todayT=gt(sel);
+  const pending=todayT.filter(t=>!t.done).length;
+  const pomos=ls('pc_'+dk(today))||0;
+
+  document.getElementById('statDays').textContent=doneD;
+  document.getElementById('statTasks').textContent=weekTasks;
+  document.getElementById('statPending').textContent=pending;
+  document.getElementById('statPomos').textContent=pomos;
+
+  const msgs=[
+    {ico:'🌱',txt:'Cada tarea completada es un paso real hacia el MIR.'},
+    {ico:'🔥',txt:`<strong>${doneD} de ${GOAL_D}</strong> días completos esta semana.`},
+    {ico:'✨',txt:`<strong>${weekTasks}</strong> tareas terminadas esta semana. Suma.`},
+    {ico:'💛',txt:'La constancia silenciosa es la forma más honesta de valentía.'},
+  ];
+  const m = doneD>=GOAL_D
+    ? {ico:'🎁',txt:'<strong>¡Regalo desbloqueado!</strong> Lo mereces, Ire.'}
+    : msgs[Math.floor(Date.now()/3600000)%msgs.length];
+
+  document.getElementById('statFoot').querySelector('.stat-foot-ico').textContent=m.ico;
+  document.getElementById('statMsg').innerHTML=m.txt;
 }
 
 function renderQuote(){
   document.getElementById('quoteEl').textContent=QUOTES[Math.floor(Date.now()/86400000)%QUOTES.length];
 }
 
-/* CALENDARIO UNIFICADO — una sola fila con toda la info */
+/* CALENDARIO */
 function renderCal(){
   const days=weekDays(), cal=document.getElementById('cal');
   cal.innerHTML='';
@@ -866,19 +1228,28 @@ function renderCal(){
 
 function scrollSel(){
   const chips=document.getElementById('cal').querySelectorAll('.day');
-  weekDays().forEach((d,i)=>{if(dk(d)===sel)chips[i]?.scrollIntoView({behavior:'smooth',block:'nearest',inline:'center'})});
+  weekDays().forEach((d,i)=>{
+    if(dk(d)===sel){
+      const chip=chips[i];
+      if(chip){
+        const parent=chip.parentElement;
+        const chipLeft=chip.offsetLeft;
+        const chipWidth=chip.offsetWidth;
+        const parentWidth=parent.offsetWidth;
+        parent.scrollTo({left:chipLeft-(parentWidth/2)+(chipWidth/2),behavior:'smooth'});
+      }
+    }
+  });
 }
 
 function renderWeekBar(){
   const done=doneDays(), pct=Math.min(Math.round(done/GOAL_D*100),100);
   document.getElementById('wFill').style.width=pct+'%';
 
-  // label
   const lbl=document.getElementById('wLabel');
   if(done>=GOAL_D) lbl.innerHTML=`<span class="hl">🎁 desbloqueado</span>`;
   else lbl.textContent=`${done} de ${GOAL_D}`;
 
-  // puntitos — uno por día objetivo (GOAL_D=6), los completados se iluminan
   const dots=document.getElementById('wDots');
   dots.innerHTML=Array.from({length:GOAL_D},(_,i)=>{
     const cls = i<done ? (i===GOAL_D-1&&done===GOAL_D ? 'wd gold' : 'wd filled') : 'wd';
@@ -899,20 +1270,34 @@ function renderTasks(){
   const total=tasks.length, pctD=total>0?Math.round(done.length/total*100):0;
   const isDone=dayDone(sel);
 
-  // hint mínimo
   const mh=document.getElementById('minHint');
-  if(total<MIN_T){
-    mh.innerHTML=`Añade <span class="hl">${MIN_T-total} tarea${(MIN_T-total)!==1?'s':''} más</span> para que este día cuente 🎁`;
+  const dp=document.getElementById('dayProgress');
+  const doneCount=done.length;
+  const pct=total>0?Math.round(doneCount/total*100):0;
+
+  if(total===0){
+    dp.innerHTML='';
+    mh.style.display='block';
+    mh.innerHTML=`Añade <span class="hl">${MIN_T}</span> tareas para que este día cuente 🎁`;
     mh.className='min-hint';
-  } else if(isDone){
-    mh.innerHTML=`<span class="hl done">✓ Día completado</span> — cuenta para tu regalo semanal`;
-    mh.className='min-hint done';
   } else {
-    mh.innerHTML=`${pctD}% completado · necesitas el ${GOAL_P}% para que cuente`;
-    mh.className='min-hint';
+    mh.style.display='none';
+    let hintTxt='', hintCls='dp-hint';
+    if(isDone){
+      hintTxt=`<span class="hl-done">✓ día completo</span>`;
+    } else if(total<MIN_T){
+      hintTxt=`<span class="hl">+${MIN_T-total} más</span> para contar`;
+    } else {
+      hintTxt=`${pct}% · meta: ${GOAL_P}%`;
+    }
+    dp.innerHTML=`
+      <div class="dp-row">
+        <div class="dp-counter">${doneCount}<em>/ ${total}</em></div>
+        <div class="${hintCls}">${hintTxt}</div>
+      </div>
+      <div class="dp-bar"><div class="dp-fill" style="width:${pct}%"></div></div>`;
   }
 
-  // reward
   const ra=document.getElementById('rewardArea');
   if(doneDays()>=GOAL_D){
     const g=weekGift();
@@ -932,8 +1317,8 @@ function renderTasks(){
 
 function tHTML(t){
   const labels={teoría:'Teoría',test:'Test',repaso:'Repaso',salud:'Salud',personal:'Personal'};
-  return `<div class="task${t.done?' done':''}">
-    <div class="chk" onclick="toggle('${t.id}')">${t.done?'✓':''}</div>
+  return `<div class="task${t.done?' done':''}" data-id="${t.id}">
+    <div class="chk" onclick="toggle('${t.id}')"><div class="chk-inner">${t.done?'✓':''}</div></div>
     <div class="task-body">
       <div class="task-txt">${esc(t.text)}</div>
       ${(t.time||t.tag)?`<div class="task-meta">
@@ -953,12 +1338,23 @@ function addTask(){
   tasks.push({id:Date.now().toString(),text:txt,time:document.getElementById('tTime').value,tag:document.getElementById('tTag').value,done:false});
   st(sel,tasks);inp.value='';renderAll();inp.focus();
 }
+
 function toggle(id){
   const tasks=gt(sel),t=tasks.find(x=>x.id===id);
   if(!t)return;
-  t.done=!t.done;st(sel,tasks);renderAll();
+  t.done=!t.done;st(sel,tasks);
+  /* microinteracción: escala breve al marcar como hecha */
+  if(t.done){
+    const el=document.querySelector(`.task[data-id="${id}"]`);
+    if(el){
+      el.classList.add('completing');
+      setTimeout(()=>el.classList.remove('completing'),380);
+    }
+  }
+  renderAll();
   if(doneDays()>=GOAL_D&&!giftShown[wk()]){giftShown[wk()]=true;setTimeout(openGift,600)}
 }
+
 function delTask(id){st(sel,gt(sel).filter(x=>x.id!==id));renderAll()}
 function saveNote(){sn(sel,document.getElementById('noteArea').value)}
 function renderNote(){document.getElementById('noteArea').value=gn(sel)}
@@ -979,11 +1375,11 @@ function closeGift(){document.getElementById('giftModal').classList.add('hidden'
 
 /* ── Pomodoro ── */
 const PR=5*60, CIRC=502.7;
-let PW=25*60; // duración trabajo, cambia con setDur
+let PW=25*60;
 let pTimer=null,pLeft=PW,pRun=false,pWork=true,pCount=0;
 
 function setDur(mins, btn){
-  if(pRun) return; // no cambiar mientras corre
+  if(pRun) return;
   PW=mins*60; pLeft=PW; pWork=true;
   document.querySelectorAll('.pdur').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
@@ -1064,8 +1460,6 @@ function showAns(){
   const el=document.getElementById('rAns');
   el.textContent='→ '+RIDDLES[rIdx].a;
   el.classList.add('show');
-  // scroll suave para que la respuesta quede visible sin tener que bajar manualmente
-  setTimeout(()=>el.scrollIntoView({behavior:'smooth',block:'nearest'}),50);
 }
 function nextRiddle(){rIdx=(rIdx+1)%RIDDLES.length;loadRiddle()}
 
